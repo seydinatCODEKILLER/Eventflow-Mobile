@@ -1,9 +1,7 @@
-import { Text, View } from "react-native";
+import { useAuthStore } from "@/src/lib/store/auth.store";
+import { Redirect } from "expo-router";
 
 export default function Index() {
-  return (
-    <View className="flex-1 justify-center items-center">
-      <Text className="text-red-500 font-bold text-3xl">Eventflow</Text>
-    </View>
-  );
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return <Redirect href={isAuthenticated ? "/(tabs)/feed" : "/(auth)/login"} />;
 }
