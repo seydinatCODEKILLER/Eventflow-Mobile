@@ -55,8 +55,17 @@ export default ({ config }) => {
         [
           "expo-image-picker",
           {
-            photosPermission: "EventFlow accède à ta galerie pour l'image de l'event.",
-            cameraPermission: "EventFlow accède à ta caméra pour scanner les QR codes.",
+            photosPermission:
+              "EventFlow accède à ta galerie pour l'image de l'event.",
+            cameraPermission:
+              "EventFlow accède à ta caméra pour scanner les QR codes.",
+          },
+        ],
+        [
+          "expo-location",
+          {
+            locationWhenInUsePermission:
+              "EventFlow utilise votre position pour trouver les événements près de vous.",
           },
         ],
       ],
