@@ -5,15 +5,6 @@ import { Home, Search, PlusSquare, User } from "lucide-react-native";
 import { useAuthStore } from "@/src/lib/store/auth.store";
 import { useNotifStore } from "@/src/lib/store/notif.store";
 
-// ─── Config des onglets ───────────────────────────────────────
-type TabConfig = {
-  name: string;
-  title: string;
-  icon: React.ElementType;
-  badge?: () => number;
-};
-
-// ─── Icône avec badge optionnel ───────────────────────────────
 function TabIcon({
   icon: Icon,
   focused,
@@ -44,7 +35,6 @@ function TabIcon({
   );
 }
 
-// ─── Layout principal ─────────────────────────────────────────
 export default function TabsLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const unreadCount = useNotifStore((s) => s.unreadCount);
@@ -54,7 +44,6 @@ export default function TabsLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // SafeArea adapté iOS / Android
   const safeBottom = Platform.select({
     ios: insets.bottom,
     android: insets.bottom > 0 ? insets.bottom : 20,
@@ -62,31 +51,6 @@ export default function TabsLayout() {
   });
 
   const tabBarHeight = 64 + safeBottom;
-
-  // Config des onglets
-  const tabs: TabConfig[] = [
-    {
-      name: "feed/index",
-      title: "Feed",
-      icon: Home,
-    },
-    {
-      name: "explorer/index",
-      title: "Explorer",
-      icon: Search,
-    },
-    {
-      name: "create/index",
-      title: "Créer",
-      icon: PlusSquare,
-    },
-    {
-      name: "profile/index",
-      title: "Profil",
-      icon: User,
-      badge: () => unreadCount,
-    },
-  ];
 
   return (
     <Tabs
@@ -121,22 +85,46 @@ export default function TabsLayout() {
         },
       }}
     >
-      {tabs.map((tab) => (
-        <Tabs.Screen
-          key={tab.name}
-          name={tab.name}
-          options={{
-            title: tab.title,
-            tabBarIcon: ({ focused }) => (
-              <TabIcon
-                icon={tab.icon}
-                focused={focused}
-                badge={tab.badge?.()}
-              />
-            ),
-          }}
-        />
-      ))}
+      {/* ── 4 onglets visibles ── */}
+      <Tabs.Screen
+        name="feed/index"
+        options={{
+          title: "Feed",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={Home} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explorer/index"
+        options={{
+          title: "Explorer",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={Search} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="create/index"
+        options={{
+          title: "Créer",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={PlusSquare} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile/index"
+        options={{
+          title: "Profil",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon={User} focused={focused} badge={unreadCount} />
+          ),
+        }}
+      />
+
+      {/* ── Routes cachées de la tab bar ── */}
+      <Tabs.Screen name="feed/[id]/index" options={{ href: null }} />
     </Tabs>
   );
 }
