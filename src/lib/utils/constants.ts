@@ -5,6 +5,7 @@ export const QUERY_KEYS = {
   nearby: ["explorer", "nearby"],
   events: ["events"],
   myEvents: ["events", "mine"],
+  myEvent: (id: string) => ["events", "mine", id],
   tickets: ["tickets"],
   notifications: ["notifications"],
   profile: ["profile"],
