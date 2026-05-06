@@ -125,6 +125,11 @@ export default function TabsLayout() {
 
       {/* ── Routes cachées de la tab bar ── */}
       <Tabs.Screen name="feed/[id]/index" options={{ href: null }} />
+      <Tabs.Screen name="profile/events/[id]/index" options={{ href: null }} />
+      <Tabs.Screen name="profile/tickets" options={{ href: null }} />
+      <Tabs.Screen name="profile/notifications" options={{ href: null }} />
+      <Tabs.Screen name="profile/settings" options={{ href: null }} />
+      <Tabs.Screen name="profile/events/index" options={{ href: null }} />
     </Tabs>
   );
 }
