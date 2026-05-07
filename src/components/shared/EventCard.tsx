@@ -25,11 +25,14 @@ export function EventCard({ event }: EventCardProps) {
   const router = useRouter();
   const { mutate: register, isPending } = useRegisterToEvent(event.id);
 
+  const inscrits = event.attendeesCount ?? 0;
+  const capacity = event.capacity ?? inscrits + (event.remainingSeats ?? 0);
+
   const fillRate =
-    event.capacity > 0
-      ? Math.round(
-          ((event.capacity - event.remainingSeats) / event.capacity) * 100,
-        )
+    capacity > 0
+      ? inscrits > 0
+        ? Math.max(1, Math.round((inscrits / capacity) * 100))
+        : 0
       : 0;
 
   const fillColor =
@@ -67,7 +70,6 @@ export function EventCard({ event }: EventCardProps) {
         className="h-52 w-full"
         imageStyle={{ borderRadius: 0 }}
       >
-        {/* Overlay dégradé */}
         <LinearGradient
           colors={["transparent", "rgba(0,0,0,0.7)"]}
           locations={[0.4, 1]}
@@ -82,14 +84,12 @@ export function EventCard({ event }: EventCardProps) {
 
         {/* Badges top */}
         <View className="flex-row items-start justify-between p-4">
-          {/* Catégorie */}
           <View className="bg-black/40 rounded-full px-3 py-1">
             <Text className="text-white text-xs font-medium">
               {CATEGORY_LABELS[event.category]}
             </Text>
           </View>
 
-          {/* Gratuit / Prix */}
           <View
             className="rounded-full px-3 py-1"
             style={{ backgroundColor: event.isFree ? "#22c55e" : "#6366f1" }}
@@ -102,7 +102,6 @@ export function EventCard({ event }: EventCardProps) {
           </View>
         </View>
 
-        {/* Status ONGOING */}
         {event.status === "ONGOING" && (
           <View className="absolute top-4 left-1/2 -translate-x-1/2 flex-row items-center gap-1 bg-red-500 rounded-full px-3 py-1">
             <View className="w-1.5 h-1.5 rounded-full bg-white" />
@@ -113,7 +112,6 @@ export function EventCard({ event }: EventCardProps) {
 
       {/* Contenu */}
       <View className="p-4 gap-3">
-        {/* Titre */}
         <Text
           className="text-foreground font-bold text-lg leading-tight"
           numberOfLines={2}
@@ -121,7 +119,6 @@ export function EventCard({ event }: EventCardProps) {
           {event.title}
         </Text>
 
-        {/* Infos */}
         <View className="gap-1.5">
           <View className="flex-row items-center gap-2">
             <Calendar size={13} color="#9ca3af" />
@@ -163,7 +160,7 @@ export function EventCard({ event }: EventCardProps) {
         {/* Bouton */}
         {event.remainingSeats <= 0 ? (
           <View className="bg-muted rounded-2xl py-3 items-center flex-row justify-center gap-2">
-            <Ban size={18} color="#666" /> {/* Icône "interdit" */}
+            <Ban size={18} color="#666" />
             <Text className="text-muted-foreground font-semibold text-sm">
               Complet
             </Text>

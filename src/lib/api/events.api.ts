@@ -121,10 +121,12 @@ export const eventsApi = {
   validateTicket: async (
     qrPayload: string,
     deviceId: string,
+    moderatorId: string,
   ): Promise<ScanResult> => {
     const { data } = await api.post<{ data: ScanResult }>("/tickets/validate", {
       qrPayload,
       deviceId,
+      moderatorId,
     });
     return data.data;
   },

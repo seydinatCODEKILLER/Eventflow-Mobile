@@ -1,9 +1,9 @@
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, Href } from "expo-router";
@@ -18,168 +18,436 @@ import { useOrganizedEvents } from "@/src/lib/hooks/use-events";
 import { OrganizedEvent } from "@/src/lib/types/event.type";
 import { formatDate } from "@/src/lib/utils/format";
 
-// ─── Badge statut event ───────────────────────────────────────
+// ─── Badge statut ──────────────────────────────────────────────────────────────
 function EventStatusBadge({ status }: { status: OrganizedEvent["status"] }) {
   const config = {
-    DRAFT: { label: "Brouillon", bg: "#f3f4f6", color: "#6b7280" },
-    PUBLISHED: { label: "Publié", bg: "#dbeafe", color: "#2563eb" },
-    ONGOING: { label: "En cours", bg: "#dcfce7", color: "#16a34a" },
-    CLOSED: { label: "Clôturé", bg: "#fee2e2", color: "#dc2626" },
+    DRAFT: { label: "Brouillon", bg: "#f3f4f6", color: "#4b5563" },
+    PUBLISHED: { label: "Publié", bg: "#dbeafe", color: "#1d4ed8" },
+    ONGOING: { label: "En cours", bg: "#d1fae5", color: "#065f46" },
+    CLOSED: { label: "Clôturé", bg: "#fee2e2", color: "#991b1b" },
   }[status];
 
   return (
     <View
-      className="px-2.5 py-1 rounded-full"
-      style={{ backgroundColor: config.bg }}
+      style={{
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 100,
+        backgroundColor: config.bg,
+      }}
     >
-      <Text className="text-xs font-semibold" style={{ color: config.color }}>
+      <Text style={{ fontSize: 10, fontWeight: "700", color: config.color }}>
         {config.label}
       </Text>
     </View>
   );
 }
 
-// ─── Card event ───────────────────────────────────────────────
+// ─── Barre de remplissage ──────────────────────────────────────────────────────
+function FillBar({
+  count,
+  capacity,
+  color,
+}: {
+  count: number;
+  capacity: number;
+  color: string;
+}) {
+  const pct = capacity > 0 ? Math.min((count / capacity) * 100, 100) : 0;
+  return (
+    <View
+      style={{
+        height: 4,
+        backgroundColor: "#ededf0",
+        borderRadius: 100,
+        overflow: "hidden",
+        marginBottom: 10,
+      }}
+    >
+      <View
+        style={{
+          height: "100%",
+          width: `${pct}%`,
+          backgroundColor: color,
+          borderRadius: 100,
+        }}
+      />
+    </View>
+  );
+}
+
+// ─── Séparateur de section ─────────────────────────────────────────────────────
+function SectionLabel({ label }: { label: string }) {
+  return (
+    <Text
+      style={{
+        fontSize: 11,
+        fontWeight: "700",
+        letterSpacing: 1,
+        textTransform: "uppercase",
+        color: "#8e8e93",
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 8,
+      }}
+    >
+      {label}
+    </Text>
+  );
+}
+
+// ─── Card event ────────────────────────────────────────────────────────────────
 function EventCard({ event }: { event: OrganizedEvent }) {
   const router = useRouter();
+
+  const accentColor =
+    event.status === "ONGOING"
+      ? "#10b981"
+      : event.status === "PUBLISHED"
+        ? "#3b82f6"
+        : event.status === "CLOSED"
+          ? "#ef4444"
+          : "#d1d5db";
+
+  const fillColor = event.status === "ONGOING" ? "#10b981" : "#6366f1";
+  const count = event.ticketsCount ?? 0;
 
   return (
     <TouchableOpacity
       onPress={() => router.push(`/(tabs)/profile/events/${event.id}` as Href)}
-      activeOpacity={0.8}
-      className="mx-4 mb-3 bg-card border border-border rounded-2xl p-4 gap-3"
+      activeOpacity={0.82}
       style={{
+        marginHorizontal: 16,
+        marginBottom: 12,
+        backgroundColor: "#ffffff",
+        borderRadius: 20,
+        borderWidth: 0.5,
+        borderColor: "rgba(0,0,0,0.07)",
+        overflow: "hidden",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
       }}
     >
-      {/* Header */}
-      <View className="flex-row items-start justify-between gap-2">
-        <Text
-          className="text-foreground font-bold text-base flex-1"
-          numberOfLines={2}
-        >
-          {event.title}
-        </Text>
-        <EventStatusBadge status={event.status} />
-      </View>
+      <View style={{ flexDirection: "row" }}>
+        {/* Accent bar gauche */}
+        <View style={{ width: 4, backgroundColor: accentColor }} />
 
-      {/* Infos */}
-      <View className="gap-1.5">
-        <View className="flex-row items-center gap-2">
-          <Calendar size={13} color="#9ca3af" />
-          <Text className="text-muted-foreground text-xs">
-            {formatDate(event.startDate)}
-          </Text>
-        </View>
-
-        <View className="flex-row items-center gap-4">
-          <View className="flex-row items-center gap-1.5">
-            <Users size={13} color="#6366f1" />
-            {/* ✅ CORRECTION ICI : event.ticketsCount au lieu de event._count.tickets */}
-            <Text className="text-muted-foreground text-xs">
-              {event.ticketsCount ?? 0} / {event.capacity} inscrits
+        <View style={{ flex: 1, padding: 14 }}>
+          {/* Titre + badge */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 8,
+              marginBottom: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "700",
+                color: "#0f0f10",
+                lineHeight: 20,
+                flex: 1,
+              }}
+              numberOfLines={2}
+            >
+              {event.title}
             </Text>
+            <EventStatusBadge status={event.status} />
           </View>
 
-          {event.status === "ONGOING" && (
-            <View className="flex-row items-center gap-1.5">
-              <ScanLine size={13} color="#16a34a" />
-              {/* ✅ CORRECTION ICI : event.scansCount */}
-              <Text className="text-green-600 text-xs font-medium">
-                {event.scansCount ?? 0} scans
+          {/* Meta */}
+          <View style={{ gap: 5, marginBottom: 10 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <Calendar size={12} color="#8e8e93" />
+              <Text
+                style={{ fontSize: 11, color: "#8e8e93", fontWeight: "500" }}
+              >
+                {formatDate(event.startDate)}
               </Text>
             </View>
-          )}
-        </View>
-      </View>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
+            >
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+              >
+                <Users size={12} color="#6366f1" />
+                <Text
+                  style={{ fontSize: 11, color: "#8e8e93", fontWeight: "500" }}
+                >
+                  <Text style={{ color: "#6366f1", fontWeight: "700" }}>
+                    {count}
+                  </Text>
+                  {" / "}
+                  {event.capacity} inscrits
+                </Text>
+              </View>
+              {event.status === "ONGOING" && (
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+                >
+                  <ScanLine size={12} color="#10b981" />
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      color: "#10b981",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {event.scansCount ?? 0} scans
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
 
-      {/* Action */}
-      <View className="flex-row items-center justify-between pt-2 border-t border-border">
-        <Text className="text-primary text-xs font-semibold">
-          Gérer un événement 
-        </Text>
-        {event.status === "DRAFT" && (
-          <Text className="text-muted-foreground text-xs">Non publié</Text>
-        )}
+          {/* Barre de remplissage */}
+          <FillBar count={count} capacity={event.capacity} color={fillColor} />
+
+          {/* Footer */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingTop: 10,
+              borderTopWidth: 0.5,
+              borderTopColor: "rgba(0,0,0,0.06)",
+            }}
+          >
+            <Text style={{ fontSize: 11, fontWeight: "700", color: "#6366f1" }}>
+              Gérer →
+            </Text>
+            {event.status === "DRAFT" && (
+              <Text style={{ fontSize: 10, color: "#8e8e93" }}>Non publié</Text>
+            )}
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-// ─── Écran principal ──────────────────────────────────────────
 export default function MyEventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-
-  // ✅ Utilisation du nouveau hook
   const { data, isLoading } = useOrganizedEvents();
-
   const events: OrganizedEvent[] = data?.data ?? [];
 
+  const active = events.filter(
+    (e) => e.status === "ONGOING" || e.status === "PUBLISHED",
+  );
+  const drafts = events.filter((e) => e.status === "DRAFT");
+  const closed = events.filter((e) => e.status === "CLOSED");
+
+  const total = events.length;
+  const published = events.filter((e) => e.status === "PUBLISHED").length;
+  const ongoing = events.filter((e) => e.status === "ONGOING").length;
+  const draft = drafts.length;
+
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View
+      style={{ flex: 1, backgroundColor: "#f5f5f7", paddingTop: insets.top }}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
-        <View className="flex-row items-center gap-3">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          borderBottomWidth: 0.5,
+          borderBottomColor: "rgba(0,0,0,0.07)",
+          backgroundColor: "rgba(245,245,247,0.9)",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="w-9 h-9 bg-card border border-border rounded-xl items-center justify-center"
             activeOpacity={0.7}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              backgroundColor: "#fff",
+              borderWidth: 0.5,
+              borderColor: "rgba(0,0,0,0.08)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <ArrowLeft size={18} color="#374151" />
+            <ArrowLeft size={17} color="#0f0f10" />
           </TouchableOpacity>
-          <Text className="text-foreground font-bold text-lg">
+          <Text style={{ fontSize: 18, fontWeight: "700", color: "#0f0f10" }}>
             Mes événements
           </Text>
         </View>
 
-        {/* Créer */}
         <TouchableOpacity
           onPress={() => router.push("/(tabs)/create")}
-          activeOpacity={0.8}
-          className="flex-row items-center gap-1.5 bg-primary rounded-xl px-3 py-2"
+          activeOpacity={0.85}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: "#6366f1",
+            borderRadius: 12,
+            paddingHorizontal: 14,
+            paddingVertical: 9,
+          }}
         >
           <Plus size={15} color="white" />
-          <Text className="text-white font-semibold text-xs">Créer</Text>
+          <Text style={{ color: "white", fontWeight: "700", fontSize: 12 }}>
+            Créer
+          </Text>
         </TouchableOpacity>
       </View>
 
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
           <ActivityIndicator size="large" color="#6366f1" />
         </View>
+      ) : events.length === 0 ? (
+        // ✅ Empty state affiché uniquement quand aucun événement
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+            gap: 12,
+          }}
+        >
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 20,
+              backgroundColor: "#eef2ff",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 4,
+            }}
+          >
+            <Calendar size={28} color="#6366f1" />
+          </View>
+          <Text style={{ fontSize: 17, fontWeight: "700", color: "#0f0f10" }}>
+            Aucun événement créé
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: "#8e8e93",
+              textAlign: "center",
+              lineHeight: 20,
+            }}
+          >
+            Créez votre premier événement et touchez votre audience.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/create")}
+            activeOpacity={0.85}
+            style={{
+              marginTop: 8,
+              backgroundColor: "#6366f1",
+              borderRadius: 14,
+              paddingHorizontal: 24,
+              paddingVertical: 13,
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "700", fontSize: 13 }}>
+              Créer un événement
+            </Text>
+          </TouchableOpacity>
+        </View>
       ) : (
-        <FlatList
-          data={events}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <EventCard event={item} />}
-          contentContainerStyle={{ paddingTop: 12, paddingBottom: 20 }}
+        // ✅ ScrollView simple quand il y a des événements
+        <ScrollView
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-20 gap-4">
-              <Text className="text-4xl">📅</Text>
-              <Text className="text-foreground font-bold text-lg">
-                Aucun événement créé
-              </Text>
-              <Text className="text-muted-foreground text-sm text-center px-8">
-                Créez votre premier événement et touchez votre audience.
-              </Text>
-              <TouchableOpacity
-                onPress={() => router.push("/(tabs)/create")}
-                activeOpacity={0.85}
-                className="bg-primary rounded-2xl px-6 py-3"
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          {/* Summary strip */}
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+              padding: 14,
+              paddingBottom: 6,
+            }}
+          >
+            {[
+              { val: total, lbl: "Total", color: "#6366f1" },
+              { val: published, lbl: "Publiés", color: "#3b82f6" },
+              { val: ongoing, lbl: "En cours", color: "#10b981" },
+              { val: draft, lbl: "Brouillons", color: "#9ca3af" },
+            ].map((s, i) => (
+              <View
+                key={i}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#fff",
+                  borderRadius: 16,
+                  borderWidth: 0.5,
+                  borderColor: "rgba(0,0,0,0.07)",
+                  padding: 10,
+                  alignItems: "center",
+                }}
               >
-                <Text className="text-white font-bold text-sm">
-                  Créer un événement
+                <Text
+                  style={{ fontSize: 20, fontWeight: "700", color: s.color }}
+                >
+                  {s.val}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          }
-        />
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: "#8e8e93",
+                    fontWeight: "500",
+                    marginTop: 2,
+                  }}
+                >
+                  {s.lbl}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {active.length > 0 && (
+            <>
+              <SectionLabel label="Actifs" />
+              {active.map((e) => (
+                <EventCard key={e.id} event={e} />
+              ))}
+            </>
+          )}
+          {drafts.length > 0 && (
+            <>
+              <SectionLabel label="Brouillons" />
+              {drafts.map((e) => (
+                <EventCard key={e.id} event={e} />
+              ))}
+            </>
+          )}
+          {closed.length > 0 && (
+            <>
+              <SectionLabel label="Clôturés" />
+              {closed.map((e) => (
+                <EventCard key={e.id} event={e} />
+              ))}
+            </>
+          )}
+        </ScrollView>
       )}
     </View>
   );

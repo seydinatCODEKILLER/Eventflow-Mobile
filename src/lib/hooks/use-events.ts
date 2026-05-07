@@ -4,6 +4,7 @@ import Toast from "react-native-toast-message";
 import { eventsApi } from "../api/events.api";
 import { CreateEventPayload } from "../types/event.type";
 import { QUERY_KEYS } from "../utils/constants";
+import { useAuthStore } from "../store/auth.store";
 
 export const useCreateEvent = () => {
   const router = useRouter();
@@ -49,6 +50,40 @@ export const useEvent = (eventId: string) => {
     queryFn: () => eventsApi.getById(eventId),
     enabled: !!eventId,
     staleTime: 2 * 60 * 1000,
+  });
+};
+
+// ─── Modifier ────────────────────────────────────────────────
+export const useUpdateEvent = (eventId: string) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Partial<CreateEventPayload>) =>
+      eventsApi.update(eventId, payload),
+    onSuccess: (event) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myEvent(eventId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.myEvents });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.feed });
+
+      Toast.show({
+        type: "success",
+        text1: "Événement mis à jour ✓",
+        text2: event.title,
+        visibilityTime: 3000,
+        position: "top",
+      });
+      router.back();
+    },
+    onError: (error: any) => {
+      Toast.show({
+        type: "error",
+        text1: "Échec de la mise à jour",
+        text2: error?.response?.data?.message ?? "Une erreur est survenue",
+        visibilityTime: 4000,
+        position: "top",
+      });
+    },
   });
 };
 
@@ -227,6 +262,8 @@ export const useDeleteEvent = () => {
 
 // ─── Scan ────────────────────────────────────────────────────
 export const useValidateTicket = () => {
+  const user = useAuthStore((s) => s.user);
+
   return useMutation({
     mutationFn: ({
       qrPayload,
@@ -234,6 +271,6 @@ export const useValidateTicket = () => {
     }: {
       qrPayload: string;
       deviceId: string;
-    }) => eventsApi.validateTicket(qrPayload, deviceId),
+    }) => eventsApi.validateTicket(qrPayload, deviceId, user?.id ?? ""),
   });
 };

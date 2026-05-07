@@ -9,6 +9,7 @@ import Toast from "react-native-toast-message";
 import { queryClient } from "@/src/lib/query-client";
 import { SplashScreen } from "@/src/components/shared/SplashScreen";
 import { useAuthStore } from "@/src/lib/store/auth.store";
+import { useAppSetup } from "@/src/config/use-app-setup";
 
 export default function RootLayout() {
   const initialize = useAuthStore((s) => s.initialize);
@@ -22,7 +23,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <StatusBar style="auto" />
-          <RootNavigator />
+          <AppContent />
           <Toast />
         </QueryClientProvider>
       </SafeAreaProvider>
@@ -30,8 +31,12 @@ export default function RootLayout() {
   );
 }
 
-function RootNavigator() {
+// ─── Logique de navigation principale ──────────────────────
+function AppContent() {
   const { isAuthenticated, isLoading } = useAuthStore();
+  
+  // ✅ Un seul mot pour gérer Socket, Push, et Listeners
+  useAppSetup();
 
   if (isLoading) return <SplashScreen />;
 

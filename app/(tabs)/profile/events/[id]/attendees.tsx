@@ -5,105 +5,358 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useMemo } from "react";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { ArrowLeft, Search, UserPlus } from "lucide-react-native";
 import { useEventTickets } from "@/src/lib/hooks/use-events";
 import { EventTicket } from "@/src/lib/types/event.type";
 
-function AttendeeCard({ ticket }: { ticket: EventTicket }) {
-  const statusColor = {
-    ACTIVE: "#6366f1",
-    USED: "#22c55e",
-    CANCELLED: "#ef4444",
-  }[ticket.status];
+// ─── Types filtre ──────────────────────────────────────────────────────────────
+type Filter = "ALL" | "ACTIVE" | "USED" | "CANCELLED";
 
-  const statusLabel = {
-    ACTIVE: "Inscrit",
-    USED: "Présent",
-    CANCELLED: "Annulé",
-  }[ticket.status];
+// ─── Avatar ────────────────────────────────────────────────────────────────────
+function Avatar({
+  name,
+  avatarUrl,
+  status,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  status: EventTicket["status"];
+}) {
+  const colors = {
+    ACTIVE: { bg: "#eef2ff", color: "#6366f1" },
+    USED: { bg: "#d1fae5", color: "#065f46" },
+    CANCELLED: { bg: "#fee2e2", color: "#991b1b" },
+  }[status];
+
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
-    <View className="mx-4 mb-3 bg-card border border-border rounded-2xl px-4 py-3 flex-row items-center gap-3">
-      <View className="w-10 h-10 rounded-xl bg-primary/10 items-center justify-center">
-        <Text className="text-primary font-bold text-sm">
-          {ticket.user.fullName.charAt(0).toUpperCase()}
+    <View
+      style={{
+        width: 46,
+        height: 46,
+        borderRadius: 14,
+        overflow: "hidden",
+        flexShrink: 0,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: colors.bg,
+      }}
+    >
+      {avatarUrl ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={{ width: 46, height: 46 }}
+          resizeMode="cover"
+        />
+      ) : (
+        <Text style={{ fontSize: 16, fontWeight: "700", color: colors.color }}>
+          {initials}
         </Text>
-      </View>
-      <View className="flex-1">
-        <Text className="text-foreground font-semibold text-sm">
-          {ticket.user.fullName}
-        </Text>
-        {ticket.user.email && (
-          <Text className="text-muted-foreground text-xs">
-            {ticket.user.email}
-          </Text>
-        )}
-        {ticket.user.phone && (
-          <Text className="text-muted-foreground text-xs">
-            {ticket.user.phone}
-          </Text>
-        )}
-      </View>
-      <View
-        className="px-2.5 py-1 rounded-full"
-        style={{ backgroundColor: `${statusColor}15` }}
-      >
-        <Text className="text-xs font-semibold" style={{ color: statusColor }}>
-          {statusLabel}
-        </Text>
-      </View>
+      )}
     </View>
   );
 }
 
+// ─── Badge statut ──────────────────────────────────────────────────────────────
+function StatusBadge({ status }: { status: EventTicket["status"] }) {
+  const config = {
+    ACTIVE: { label: "Inscrit", bg: "#eef2ff", color: "#6366f1" },
+    USED: { label: "Présent", bg: "#d1fae5", color: "#065f46" },
+    CANCELLED: { label: "Annulé", bg: "#fee2e2", color: "#991b1b" },
+  }[status];
+
+  return (
+    <View
+      style={{
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 100,
+        backgroundColor: config.bg,
+      }}
+    >
+      <Text style={{ fontSize: 10, fontWeight: "700", color: config.color }}>
+        {config.label}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Card inscrit ──────────────────────────────────────────────────────────────
+function AttendeeCard({ ticket }: { ticket: EventTicket }) {
+  return (
+    <View
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 18,
+        borderWidth: 0.5,
+        borderColor: "rgba(0,0,0,0.07)",
+        padding: 12,
+        paddingHorizontal: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        elevation: 1,
+      }}
+    >
+      <Avatar
+        name={ticket.user.fullName}
+        avatarUrl={ticket.user.avatarUrl}
+        status={ticket.status}
+      />
+
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "700",
+            color: "#0f0f10",
+            marginBottom: 2,
+          }}
+          numberOfLines={1}
+        >
+          {ticket.user.fullName}
+        </Text>
+        {ticket.user.email && (
+          <Text style={{ fontSize: 11, color: "#8e8e93" }} numberOfLines={1}>
+            {ticket.user.email}
+          </Text>
+        )}
+        {!ticket.user.email && ticket.user.phone && (
+          <Text style={{ fontSize: 11, color: "#8e8e93" }} numberOfLines={1}>
+            {ticket.user.phone}
+          </Text>
+        )}
+        {ticket.addedByOrganizer && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              marginTop: 4,
+              alignSelf: "flex-start",
+              backgroundColor: "#fef3c7",
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+              borderRadius: 100,
+            }}
+          >
+            <UserPlus size={10} color="#d97706" />
+            <Text style={{ fontSize: 10, fontWeight: "600", color: "#d97706" }}>
+              Ajouté manuellement
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <StatusBadge status={ticket.status} />
+    </View>
+  );
+}
+
+// ─── Onglet filtre ─────────────────────────────────────────────────────────────
+function FilterTab({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.75}
+      style={{
+        paddingHorizontal: 14,
+        paddingVertical: 7,
+        borderRadius: 100,
+        backgroundColor: active ? "#6366f1" : "#fff",
+        borderWidth: active ? 0 : 0.5,
+        borderColor: "rgba(0,0,0,0.08)",
+        marginRight: 8,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "600",
+          color: active ? "#fff" : "#8e8e93",
+        }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Écran principal ───────────────────────────────────────────────────────────
 export default function AttendeesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("ALL");
 
   const { data: tickets, isLoading } = useEventTickets(id);
 
   const filtered = useMemo(() => {
     if (!tickets) return [];
-    if (!search.trim()) return tickets;
-    const q = search.toLowerCase();
-    return tickets.filter(
-      (t) =>
-        t.user.fullName.toLowerCase().includes(q) ||
-        t.user.email?.toLowerCase().includes(q) ||
-        t.user.phone?.includes(q),
-    );
-  }, [tickets, search]);
+    let result = tickets;
+    if (filter !== "ALL") result = result.filter((t) => t.status === filter);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (t) =>
+          t.user.fullName.toLowerCase().includes(q) ||
+          t.user.email?.toLowerCase().includes(q) ||
+          t.user.phone?.includes(q),
+      );
+    }
+    return result;
+  }, [tickets, search, filter]);
+
+  const total = tickets?.length ?? 0;
+  const active = tickets?.filter((t) => t.status === "ACTIVE").length ?? 0;
+  const present = tickets?.filter((t) => t.status === "USED").length ?? 0;
+  const cancelled =
+    tickets?.filter((t) => t.status === "CANCELLED").length ?? 0;
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View
+      style={{ flex: 1, backgroundColor: "#f5f5f7", paddingTop: insets.top }}
+    >
       {/* Header */}
-      <View className="flex-row items-center gap-3 px-4 py-3 border-b border-border">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-9 h-9 bg-card border border-border rounded-xl items-center justify-center"
-          activeOpacity={0.7}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          borderBottomWidth: 0.5,
+          borderBottomColor: "rgba(0,0,0,0.07)",
+          backgroundColor: "rgba(245,245,247,0.9)",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              backgroundColor: "#fff",
+              borderWidth: 0.5,
+              borderColor: "rgba(0,0,0,0.08)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ArrowLeft size={17} color="#0f0f10" />
+          </TouchableOpacity>
+          <Text style={{ fontSize: 18, fontWeight: "700", color: "#0f0f10" }}>
+            Inscrits
+          </Text>
+        </View>
+
+        {/* Total pill */}
+        <View
+          style={{
+            backgroundColor: "#eef2ff",
+            paddingHorizontal: 12,
+            paddingVertical: 4,
+            borderRadius: 100,
+          }}
         >
-          <ArrowLeft size={18} color="#374151" />
-        </TouchableOpacity>
-        <Text className="text-foreground font-bold text-lg">
-          Inscrits ({tickets?.length ?? 0})
-        </Text>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: "#6366f1" }}>
+            {total}
+          </Text>
+        </View>
       </View>
 
-      {/* Recherche */}
-      <View className="px-4 py-3 border-b border-border">
-        <View className="flex-row items-center bg-card border border-border rounded-2xl px-4 h-11 gap-3">
-          <Search size={15} color="#9ca3af" />
+      {/* Stats strip */}
+      {!isLoading && total > 0 && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            padding: 14,
+            paddingBottom: 6,
+          }}
+        >
+          {[
+            { val: active, lbl: "Inscrits", color: "#6366f1" },
+            { val: present, lbl: "Présents", color: "#10b981" },
+            { val: cancelled, lbl: "Annulés", color: "#ef4444" },
+          ].map((s, i) => (
+            <View
+              key={i}
+              style={{
+                flex: 1,
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                borderWidth: 0.5,
+                borderColor: "rgba(0,0,0,0.07)",
+                padding: 11,
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 20, fontWeight: "700", color: s.color }}>
+                {s.val}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: "#8e8e93",
+                  fontWeight: "500",
+                  marginTop: 2,
+                }}
+              >
+                {s.lbl}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Search */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            backgroundColor: "#fff",
+            borderWidth: 0.5,
+            borderColor: "rgba(0,0,0,0.07)",
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            height: 44,
+          }}
+        >
+          <Search size={15} color="#8e8e93" />
           <TextInput
-            className="flex-1 text-foreground text-sm"
-            placeholder="Rechercher un inscrit..."
-            placeholderTextColor="#9ca3af"
+            style={{ flex: 1, fontSize: 13, color: "#0f0f10" }}
+            placeholder="Nom, email ou téléphone…"
+            placeholderTextColor="#8e8e93"
             value={search}
             onChangeText={setSearch}
             autoCapitalize="none"
@@ -111,8 +364,36 @@ export default function AttendeesScreen() {
         </View>
       </View>
 
+      {/* Filtres */}
+      <View
+        style={{
+          flexDirection: "row",
+          paddingHorizontal: 16,
+          paddingBottom: 10,
+        }}
+      >
+        {(["ALL", "ACTIVE", "USED", "CANCELLED"] as Filter[]).map((f) => (
+          <FilterTab
+            key={f}
+            label={
+              f === "ALL"
+                ? "Tous"
+                : f === "ACTIVE"
+                  ? "Inscrits"
+                  : f === "USED"
+                    ? "Présents"
+                    : "Annulés"
+            }
+            active={filter === f}
+            onPress={() => setFilter(f)}
+          />
+        ))}
+      </View>
+
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
           <ActivityIndicator size="large" color="#6366f1" />
         </View>
       ) : (
@@ -120,14 +401,36 @@ export default function AttendeesScreen() {
           data={filtered}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <AttendeeCard ticket={item} />}
-          contentContainerStyle={{ paddingTop: 12, paddingBottom: 20 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 4,
+            paddingBottom: 32,
+          }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-20 gap-3">
-              <Text className="text-4xl">👥</Text>
-              <Text className="text-foreground font-bold text-lg">
+            <View style={{ alignItems: "center", paddingTop: 60, gap: 10 }}>
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 18,
+                  backgroundColor: "#eef2ff",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Search size={24} color="#6366f1" />
+              </View>
+              <Text
+                style={{ fontSize: 16, fontWeight: "700", color: "#0f0f10" }}
+              >
                 {search ? "Aucun résultat" : "Aucun inscrit"}
               </Text>
+              {search && (
+                <Text style={{ fontSize: 13, color: "#8e8e93" }}>
+                  Essayez un autre terme
+                </Text>
+              )}
             </View>
           }
         />

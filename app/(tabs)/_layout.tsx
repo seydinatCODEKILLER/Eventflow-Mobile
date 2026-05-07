@@ -116,7 +116,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile/index"
         options={{
-          title: "Profil",
+          title: "Profile",
           tabBarIcon: ({ focused }) => (
             <TabIcon icon={User} focused={focused} badge={unreadCount} />
           ),
@@ -130,6 +130,18 @@ export default function TabsLayout() {
       <Tabs.Screen name="profile/notifications" options={{ href: null }} />
       <Tabs.Screen name="profile/settings" options={{ href: null }} />
       <Tabs.Screen name="profile/events/index" options={{ href: null }} />
+      {/* <Tabs.Screen name="profile/events/[id]/index" options={{ href: null }} /> */}
+      <Tabs.Screen
+        name="profile/events/[id]/attendees"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="profile/events/[id]/moderators"
+        options={{ href: null }}
+      />
+      <Tabs.Screen name="profile/events/[id]/stats" options={{ href: null }} />
+      <Tabs.Screen name="profile/events/[id]/scan" options={{ href: null }} />
+      <Tabs.Screen name="profile/events/[id]/edit" options={{ href: null }} />
     </Tabs>
   );
 }

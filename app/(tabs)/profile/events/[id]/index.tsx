@@ -14,7 +14,7 @@ import {
   QrCode,
   BarChart2,
   Shield,
-  Edit,
+  Pencil,
   Trash2,
   Play,
   X,
@@ -29,13 +29,13 @@ import {
 import { formatDate, formatPrice } from "@/src/lib/utils/format";
 import { Event } from "@/src/lib/types/event.type";
 
-// ─── Badge statut ─────────────────────────────────────────────
+// ─── Badge statut ────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: Event["status"] }) {
   const config = {
-    DRAFT: { label: "Brouillon", bg: "#f3f4f6", color: "#6b7280" },
-    PUBLISHED: { label: "Publié", bg: "#dbeafe", color: "#2563eb" },
-    ONGOING: { label: "En cours", bg: "#dcfce7", color: "#16a34a" },
-    CLOSED: { label: "Clôturé", bg: "#fee2e2", color: "#dc2626" },
+    DRAFT: { label: "Brouillon", bg: "#f3f4f6", color: "#4b5563" },
+    PUBLISHED: { label: "Publié", bg: "#dbeafe", color: "#1d4ed8" },
+    ONGOING: { label: "En cours", bg: "#d1fae5", color: "#065f46" },
+    CLOSED: { label: "Clôturé", bg: "#fee2e2", color: "#991b1b" },
   }[status];
 
   return (
@@ -43,55 +43,73 @@ function StatusBadge({ status }: { status: Event["status"] }) {
       className="px-3 py-1 rounded-full"
       style={{ backgroundColor: config.bg }}
     >
-      <Text className="text-sm font-semibold" style={{ color: config.color }}>
+      <Text style={{ color: config.color, fontSize: 12, fontWeight: "700" }}>
         {config.label}
       </Text>
     </View>
   );
 }
 
-// ─── Carte action ─────────────────────────────────────────────
+// ─── Carte action ─────────────────────────────────────────────────────────────
 function ActionCard({
   icon: Icon,
   label,
   sublabel,
   onPress,
   color = "#6366f1",
+  iconBg = "#eef2ff",
 }: {
   icon: React.ElementType;
   label: string;
   sublabel?: string;
   onPress: () => void;
   color?: string;
+  iconBg?: string;
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.8}
-      className="flex-1 bg-card border border-border rounded-2xl p-4 gap-2"
+      activeOpacity={0.75}
       style={{
+        flex: 1,
+        backgroundColor: "#ffffff",
+        borderRadius: 18,
+        borderWidth: 0.5,
+        borderColor: "rgba(0,0,0,0.07)",
+        padding: 15,
+        gap: 10,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
       }}
     >
       <View
-        className="w-10 h-10 rounded-xl items-center justify-center"
-        style={{ backgroundColor: `${color}15` }}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: iconBg,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <Icon size={20} color={color} />
       </View>
-      <Text className="text-foreground font-bold text-sm">{label}</Text>
+      <Text style={{ fontSize: 13, fontWeight: "700", color: "#0f0f10" }}>
+        {label}
+      </Text>
       {sublabel && (
-        <Text className="text-muted-foreground text-xs">{sublabel}</Text>
+        <Text style={{ fontSize: 11, color: "#8e8e93", marginTop: -6 }}>
+          {sublabel}
+        </Text>
       )}
     </TouchableOpacity>
   );
 }
 
-// ─── Écran principal ──────────────────────────────────────────
+// ─── Écran principal ──────────────────────────────────────────────────────────
 export default function EventDashboardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -103,22 +121,17 @@ export default function EventDashboardScreen() {
   const { mutate: close, isPending: isClosing } = useCloseEvent(id);
   const { mutate: deleteEvent, isPending: isDeleting } = useDeleteEvent();
 
-  const confirmClose = () => {
+  const confirmClose = () =>
     Alert.alert(
       "Clôturer l'événement",
       "Cette action est irréversible. L'événement sera fermé aux inscriptions.",
       [
         { text: "Annuler", style: "cancel" },
-        {
-          text: "Clôturer",
-          style: "destructive",
-          onPress: () => close(),
-        },
+        { text: "Clôturer", style: "destructive", onPress: () => close() },
       ],
     );
-  };
 
-  const confirmDelete = () => {
+  const confirmDelete = () =>
     Alert.alert("Supprimer l'événement", "Cette action est irréversible.", [
       { text: "Annuler", style: "cancel" },
       {
@@ -127,219 +140,400 @@ export default function EventDashboardScreen() {
         onPress: () => deleteEvent(id),
       },
     ]);
-  };
 
-  if (isLoading) {
+  if (isLoading)
     return (
-      <View className="flex-1 bg-background items-center justify-center">
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f5f5f7",
+        }}
+      >
         <ActivityIndicator size="large" color="#6366f1" />
       </View>
     );
-  }
 
-  if (!event) {
+  if (!event)
     return (
-      <View className="flex-1 bg-background items-center justify-center gap-4">
-        <Text className="text-foreground font-bold text-lg">
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f5f5f7",
+          gap: 12,
+        }}
+      >
+        <Text style={{ fontSize: 17, fontWeight: "700", color: "#0f0f10" }}>
           Événement introuvable
         </Text>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text className="text-primary font-semibold">Retour</Text>
+          <Text style={{ color: "#6366f1", fontWeight: "600" }}>Retour</Text>
         </TouchableOpacity>
       </View>
     );
-  }
 
-  const fillRate =
-    stats && stats.capacity > 0
-      ? Math.round(
-          ((stats.capacity - stats.remainingSeats) / stats.capacity) * 100,
-        )
-      : 0;
+  const capacity = stats?.capacity ?? 0;
+  const remainingSeats = stats?.remainingSeats ?? 0;
+  const registered = capacity > 0 ? capacity - remainingSeats : 0;
+  const fillRate = capacity > 0 ? Math.round((registered / capacity) * 100) : 0;
+  const fillColor =
+    fillRate >= 90 ? "#ef4444" : fillRate >= 70 ? "#f59e0b" : "#6366f1";
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
+    <View
+      style={{ flex: 1, backgroundColor: "#f5f5f7", paddingTop: insets.top }}
+    >
+      {/* ── Header ──────────────────────────────────────────────────── */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          borderBottomWidth: 0.5,
+          borderBottomColor: "rgba(0,0,0,0.07)",
+          backgroundColor: "rgba(245,245,247,0.9)",
+        }}
+      >
         <TouchableOpacity
           onPress={() => router.back()}
-          className="w-9 h-9 bg-card border border-border rounded-xl items-center justify-center"
           activeOpacity={0.7}
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 12,
+            backgroundColor: "#fff",
+            borderWidth: 0.5,
+            borderColor: "rgba(0,0,0,0.08)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <ArrowLeft size={18} color="#374151" />
+          <ArrowLeft size={17} color="#0f0f10" />
         </TouchableOpacity>
 
         <StatusBadge status={event.status} />
 
-        {/* Modifier */}
-        {event.status !== "CLOSED" && (
+        {event.status !== "CLOSED" ? (
           <TouchableOpacity
             onPress={() =>
               router.push(`/(tabs)/profile/events/${id}/edit` as Href)
             }
-            className="w-9 h-9 bg-card border border-border rounded-xl items-center justify-center"
             activeOpacity={0.7}
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              backgroundColor: "#fff",
+              borderWidth: 0.5,
+              borderColor: "rgba(0,0,0,0.08)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <Edit size={16} color="#374151" />
+            <Pencil size={16} color="#0f0f10" />
           </TouchableOpacity>
+        ) : (
+          <View style={{ width: 38 }} />
         )}
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 48 }}
       >
-        {/* ── Infos event ──────────────────────────────── */}
-        <View className="px-4 pt-5 pb-4 gap-2">
-          <Text className="text-foreground font-bold text-2xl leading-tight">
+        {/* ── Hero ────────────────────────────────────────────────────── */}
+        <View
+          style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 4 }}
+        >
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              letterSpacing: 1.1,
+              color: "#6366f1",
+              textTransform: "uppercase",
+              marginBottom: 8,
+            }}
+          >
+            Événement
+          </Text>
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "700",
+              color: "#0f0f10",
+              lineHeight: 28,
+              marginBottom: 10,
+            }}
+          >
             {event.title}
           </Text>
-          <Text className="text-muted-foreground text-sm">
-            {formatDate(event.startDate)} · {event.location}
-          </Text>
-          <Text className="text-muted-foreground text-sm">
-            {event.isFree
-              ? "Gratuit"
-              : formatPrice(event.price!, event.currency)}
-          </Text>
+          <View style={{ flexDirection: "row", gap: 14, flexWrap: "wrap" }}>
+            <Text style={{ fontSize: 13, color: "#8e8e93", fontWeight: "500" }}>
+              📅 {formatDate(event.startDate)}
+            </Text>
+            <Text style={{ fontSize: 13, color: "#8e8e93", fontWeight: "500" }}>
+              📍 {event.location}
+            </Text>
+            <Text style={{ fontSize: 13, color: "#8e8e93", fontWeight: "500" }}>
+              🎟{" "}
+              {event.isFree
+                ? "Gratuit"
+                : formatPrice(event.price!, event.currency)}
+            </Text>
+          </View>
         </View>
 
-        {/* ── Stats rapides ────────────────────────────── */}
+        {/* ── Jauge remplissage ────────────────────────────────────────── */}
         {stats && (
-          <View className="mx-4 mb-5 gap-3">
-            {/* Jauge remplissage */}
-            <View className="bg-card border border-border rounded-2xl p-4 gap-3">
-              <View className="flex-row justify-between items-center">
-                <Text className="text-foreground font-semibold text-sm">
-                  Remplissage
-                </Text>
-                <Text
-                  className="font-bold text-sm"
-                  style={{
-                    color:
-                      fillRate >= 90
-                        ? "#ef4444"
-                        : fillRate >= 70
-                          ? "#f97316"
-                          : "#6366f1",
-                  }}
-                >
-                  {fillRate}%
-                </Text>
-              </View>
-              <View className="h-2 bg-muted rounded-full overflow-hidden">
-                <View
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${fillRate}%`,
-                    backgroundColor:
-                      fillRate >= 90
-                        ? "#ef4444"
-                        : fillRate >= 70
-                          ? "#f97316"
-                          : "#6366f1",
-                  }}
-                />
-              </View>
-              <View className="flex-row justify-between">
-                <Text className="text-muted-foreground text-xs">
-                  {stats.capacity - stats.remainingSeats} inscrits
-                </Text>
-                <Text className="text-muted-foreground text-xs">
-                  {stats.remainingSeats} places restantes
-                </Text>
-              </View>
+          <View
+            style={{
+              marginHorizontal: 16,
+              marginTop: 16,
+              backgroundColor: "#fff",
+              borderRadius: 20,
+              borderWidth: 0.5,
+              borderColor: "rgba(0,0,0,0.07)",
+              padding: 16,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.04,
+              shadowRadius: 4,
+              elevation: 1,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{ fontSize: 13, fontWeight: "600", color: "#0f0f10" }}
+              >
+                Remplissage
+              </Text>
+              <Text
+                style={{ fontSize: 20, fontWeight: "700", color: fillColor }}
+              >
+                {fillRate}%
+              </Text>
             </View>
-
-            {/* Chiffres clés */}
-            <View className="flex-row gap-3">
-              <View className="flex-1 bg-card border border-border rounded-2xl p-4 items-center gap-1">
-                <Text className="text-foreground font-bold text-2xl">
-                  {stats.tickets.ACTIVE}
-                </Text>
-                <Text className="text-muted-foreground text-xs">Actifs</Text>
-              </View>
-              <View className="flex-1 bg-card border border-border rounded-2xl p-4 items-center gap-1">
-                <Text className="text-foreground font-bold text-2xl">
-                  {stats.tickets.USED}
-                </Text>
-                <Text className="text-muted-foreground text-xs">Présents</Text>
-              </View>
-              <View className="flex-1 bg-card border border-border rounded-2xl p-4 items-center gap-1">
-                <Text
-                  className="font-bold text-2xl"
-                  style={{ color: "#6366f1" }}
-                >
-                  {stats.attendanceRate}%
-                </Text>
-                <Text className="text-muted-foreground text-xs">Présence</Text>
-              </View>
+            {/* Track */}
+            <View
+              style={{
+                height: 6,
+                backgroundColor: "#ededf0",
+                borderRadius: 100,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: "100%",
+                  width: `${fillRate}%`,
+                  backgroundColor: fillColor,
+                  borderRadius: 100,
+                }}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 10,
+              }}
+            >
+              <Text style={{ fontSize: 12, color: "#8e8e93" }}>
+                <Text style={{ fontWeight: "700", color: "#0f0f10" }}>
+                  {registered}
+                </Text>{" "}
+                inscrits
+              </Text>
+              <Text style={{ fontSize: 12, color: "#8e8e93" }}>
+                <Text style={{ fontWeight: "700", color: "#0f0f10" }}>
+                  {stats.remainingSeats}
+                </Text>{" "}
+                restantes
+              </Text>
             </View>
           </View>
         )}
 
-        {/* ── Actions rapides ──────────────────────────── */}
-        <View className="px-4 mb-5">
-          <Text className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-3">
-            Gestion
-          </Text>
-          <View className="flex-row gap-3 mb-3">
-            <ActionCard
-              icon={Users}
-              label="Inscrits"
-              sublabel={`${stats?.tickets.total ?? 0} inscrits`}
-              onPress={() =>
-                router.push(`/(tabs)/profile/events/${id}/attendees` as Href)
-              }
-            />
-            <ActionCard
-              icon={Shield}
-              label="Modérateurs"
-              onPress={() =>
-                router.push(`/(tabs)/profile/events/${id}/moderators` as Href)
-              }
-            />
+        {/* ── Stats clés ───────────────────────────────────────────────── */}
+        {stats && (
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 10,
+              marginHorizontal: 16,
+              marginTop: 12,
+            }}
+          >
+            {[
+              { val: stats.tickets.ACTIVE, lbl: "Actifs", accent: false },
+              { val: stats.tickets.USED, lbl: "Présents", accent: false },
+              {
+                val: `${stats.attendanceRate}%`,
+                lbl: "Présence",
+                accent: true,
+              },
+            ].map((s, i) => (
+              <View
+                key={i}
+                style={{
+                  flex: 1,
+                  backgroundColor: "#fff",
+                  borderRadius: 18,
+                  borderWidth: 0.5,
+                  borderColor: "rgba(0,0,0,0.07)",
+                  padding: 14,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.04,
+                  shadowRadius: 4,
+                  elevation: 1,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "700",
+                    color: s.accent ? "#6366f1" : "#0f0f10",
+                    lineHeight: 28,
+                  }}
+                >
+                  {s.val}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: "#8e8e93",
+                    marginTop: 4,
+                    fontWeight: "500",
+                  }}
+                >
+                  {s.lbl}
+                </Text>
+              </View>
+            ))}
           </View>
-          <View className="flex-row gap-3">
-            <ActionCard
-              icon={BarChart2}
-              label="Statistiques"
-              onPress={() =>
-                router.push(`/(tabs)/profile/events/${id}/stats` as Href)
-              }
-            />
-            <ActionCard
-              icon={QrCode}
-              label="Scanner"
-              sublabel="Valider les tickets"
-              color="#22c55e"
-              onPress={() =>
-                router.push(`/(tabs)/profile/events/${id}/scan` as Href)
-              }
-            />
-          </View>
+        )}
+
+        {/* ── Gestion ──────────────────────────────────────────────────── */}
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            letterSpacing: 1,
+            textTransform: "uppercase",
+            color: "#8e8e93",
+            paddingHorizontal: 16,
+            paddingTop: 20,
+            paddingBottom: 10,
+          }}
+        >
+          Gestion
+        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            paddingHorizontal: 16,
+            marginBottom: 10,
+          }}
+        >
+          <ActionCard
+            icon={Users}
+            label="Inscrits"
+            sublabel={`${stats?.tickets.total ?? 0} participants`}
+            onPress={() =>
+              router.push(`/(tabs)/profile/events/${id}/attendees` as Href)
+            }
+            color="#6366f1"
+            iconBg="#eef2ff"
+          />
+          <ActionCard
+            icon={Shield}
+            label="Modérateurs"
+            sublabel="Gérer l'équipe"
+            onPress={() =>
+              router.push(`/(tabs)/profile/events/${id}/moderators` as Href)
+            }
+            color="#16a34a"
+            iconBg="#f0fdf4"
+          />
+        </View>
+        <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16 }}>
+          <ActionCard
+            icon={BarChart2}
+            label="Statistiques"
+            sublabel="Voir les détails"
+            onPress={() =>
+              router.push(`/(tabs)/profile/events/${id}/stats` as Href)
+            }
+            color="#ea580c"
+            iconBg="#fff7ed"
+          />
+          <ActionCard
+            icon={QrCode}
+            label="Scanner"
+            sublabel="Valider les tickets"
+            onPress={() =>
+              router.push(`/(tabs)/profile/events/${id}/scan` as Href)
+            }
+            color="#10b981"
+            iconBg="#f0fdf4"
+          />
         </View>
 
-        {/* ── Actions statut ───────────────────────────── */}
-        <View className="px-4 gap-3">
-          <Text className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-            Actions
-          </Text>
-
+        {/* ── Actions statut ───────────────────────────────────────────── */}
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "700",
+            letterSpacing: 1,
+            textTransform: "uppercase",
+            color: "#8e8e93",
+            paddingHorizontal: 16,
+            paddingTop: 20,
+            paddingBottom: 10,
+          }}
+        >
+          Actions
+        </Text>
+        <View style={{ paddingHorizontal: 16, gap: 10 }}>
           {event.status === "DRAFT" && (
             <TouchableOpacity
               onPress={() => publish()}
               disabled={isPublishing}
-              activeOpacity={0.85}
-              className="flex-row items-center justify-center gap-2 rounded-2xl py-4"
-              style={{ backgroundColor: isPublishing ? "#a5b4fc" : "#6366f1" }}
+              activeOpacity={0.82}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                backgroundColor: isPublishing ? "#a5b4fc" : "#6366f1",
+                borderRadius: 16,
+                paddingVertical: 15,
+              }}
             >
               {isPublishing ? (
                 <ActivityIndicator color="white" />
               ) : (
                 <>
-                  <Play size={16} color="white" />
-                  <Text className="text-white font-bold text-sm">
+                  <Play size={16} color="white" fill="white" />
+                  <Text
+                    style={{ color: "white", fontWeight: "700", fontSize: 14 }}
+                  >
                     Publier un événement
                   </Text>
                 </>
@@ -351,17 +545,30 @@ export default function EventDashboardScreen() {
             <TouchableOpacity
               onPress={confirmClose}
               disabled={isClosing}
-              activeOpacity={0.85}
-              className="flex-row items-center justify-center gap-2 bg-orange-50 border border-orange-200 rounded-2xl py-4"
+              activeOpacity={0.82}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                backgroundColor: "#fffbeb",
+                borderRadius: 16,
+                paddingVertical: 15,
+                borderWidth: 1.5,
+                borderColor: "#fcd34d",
+              }}
             >
               {isClosing ? (
-                <ActivityIndicator color="#f97316" />
+                <ActivityIndicator color="#d97706" />
               ) : (
                 <>
-                  <X size={16} color="#f97316" />
+                  <X size={16} color="#d97706" />
                   <Text
-                    className="font-bold text-sm"
-                    style={{ color: "#f97316" }}
+                    style={{
+                      color: "#d97706",
+                      fontWeight: "700",
+                      fontSize: 14,
+                    }}
                   >
                     Clôturer un événement
                   </Text>
@@ -374,15 +581,31 @@ export default function EventDashboardScreen() {
             <TouchableOpacity
               onPress={confirmDelete}
               disabled={isDeleting}
-              activeOpacity={0.85}
-              className="flex-row items-center justify-center gap-2 bg-red-50 border border-red-200 rounded-2xl py-4"
+              activeOpacity={0.82}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                backgroundColor: "#fee2e2",
+                borderRadius: 16,
+                paddingVertical: 15,
+                borderWidth: 1.5,
+                borderColor: "#fca5a5",
+              }}
             >
               {isDeleting ? (
                 <ActivityIndicator color="#ef4444" />
               ) : (
                 <>
                   <Trash2 size={16} color="#ef4444" />
-                  <Text className="font-bold text-sm text-red-500">
+                  <Text
+                    style={{
+                      color: "#ef4444",
+                      fontWeight: "700",
+                      fontSize: 14,
+                    }}
+                  >
                     Supprimer un événement
                   </Text>
                 </>
