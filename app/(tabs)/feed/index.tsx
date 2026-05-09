@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMemo, useState } from "react";
-import { Bell, SlidersHorizontal } from "lucide-react-native";
+import { Bell } from "lucide-react-native";
 import { Href, useRouter } from "expo-router";
 import { useFeed } from "@/src/lib/hooks/use-feed";
 import { EventCard } from "@/src/components/shared/EventCard";
@@ -50,17 +50,10 @@ export default function FeedScreen() {
         </View>
 
         <View className="flex-row items-center gap-2">
-          {/* Filtres */}
-          <TouchableOpacity
-            className="w-10 h-10 bg-card border border-border rounded-xl items-center justify-center"
-            activeOpacity={0.7}
-          >
-            <SlidersHorizontal size={18} color="#6b7280" />
-          </TouchableOpacity>
 
           {/* Notifications */}
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/profile/notifications" as Href)}
+            onPress={() => router.push("/(tabs)/profile/notifications?from=feed" as Href)}
             className="w-10 h-10 bg-card border border-border rounded-xl items-center justify-center"
             activeOpacity={0.7}
           >
@@ -88,7 +81,7 @@ export default function FeedScreen() {
         <FlatList
           data={events}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <EventCard event={item} />}
+          renderItem={({ item, index }) => <EventCard event={item} index={index} from="feed" />}
           contentContainerStyle={{
             paddingTop: 8,
             paddingBottom: 20,

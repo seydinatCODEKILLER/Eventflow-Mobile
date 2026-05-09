@@ -130,4 +130,11 @@ export const eventsApi = {
     });
     return data.data;
   },
+
+  getModeratedEvents: async (): Promise<{ data: Event[]; pagination: any }> => {
+    const { data } = await api.get<{ data: Event[]; pagination: any }>(
+      "/events/moderated",
+    );
+    return data;
+  },
 };

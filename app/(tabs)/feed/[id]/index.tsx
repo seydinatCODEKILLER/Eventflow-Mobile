@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, Href } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
@@ -25,11 +25,21 @@ import {
   useRegisterToEvent,
 } from "@/src/lib/hooks/use-feed";
 import { formatDateTime, formatPrice } from "@/src/lib/utils/format";
+import { useAuthStore } from "@/src/lib/store/auth.store";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 export default function FeedEventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: "/(tabs)/feed" as Href,
+    routeMap: {
+      explorer: "/(tabs)/explorer" as Href,
+      notification: "/(tabs)/profile/notifications" as Href,
+    },
+  });
   const insets = useSafeAreaInsets();
+  const user = useAuthStore((s) => s.user);
   const { data: event, isLoading } = useFeedEventDetail(id);
   const { mutate: register, isPending } = useRegisterToEvent(id);
 
@@ -53,6 +63,8 @@ export default function FeedEventDetailScreen() {
       </View>
     );
   }
+
+  const isOwner = user?.id === event.organizer.id;
 
   const fillRate =
     event.capacity > 0
@@ -81,12 +93,10 @@ export default function FeedEventDetailScreen() {
           }
           style={{ height: 280 }}
         >
-          {/* Overlay */}
           <View className="absolute inset-0 bg-black/30" />
 
-          {/* Back button */}
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             className="absolute top-0 left-4 w-10 h-10 bg-black/40 rounded-full items-center justify-center"
             style={{ top: insets.top + 8 }}
             activeOpacity={0.8}
@@ -94,7 +104,6 @@ export default function FeedEventDetailScreen() {
             <ArrowLeft size={20} color="white" />
           </TouchableOpacity>
 
-          {/* Badge prix */}
           <View
             className="absolute bottom-4 right-4 rounded-2xl px-4 py-2"
             style={{ backgroundColor: event.isFree ? "#22c55e" : "#6366f1" }}
@@ -108,7 +117,11 @@ export default function FeedEventDetailScreen() {
         </ImageBackground>
 
         {/* Contenu */}
-        <View className="px-4 pt-5 pb-32 gap-5">
+        {/* ✅ MODIFICATION : Padding dynamique en bas selon si le CTA est visible ou non */}
+        <View
+          className="px-4 pt-5 gap-5"
+          style={{ paddingBottom: isOwner ? 40 : 180 }}
+        >
           {/* Titre + statut */}
           <View className="gap-2">
             <Text className="text-foreground font-bold text-2xl leading-tight">
@@ -209,7 +222,7 @@ export default function FeedEventDetailScreen() {
                 {event.organizer.fullName.charAt(0).toUpperCase()}
               </Text>
             </View>
-            <View>
+            <View className="flex-1">
               <Text className="text-muted-foreground text-xs">
                 Organisateur
               </Text>
@@ -217,6 +230,12 @@ export default function FeedEventDetailScreen() {
                 {event.organizer.fullName}
               </Text>
             </View>
+            {/* ✅ AJOUT : Petit badge "Vous" si c'est ton event */}
+            {isOwner && (
+              <View className="bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+                <Text className="text-primary text-[10px] font-bold">VOUS</Text>
+              </View>
+            )}
           </View>
 
           {/* Description */}
@@ -251,61 +270,63 @@ export default function FeedEventDetailScreen() {
       </ScrollView>
 
       {/* ─── CTA Fixe Premium (Glassmorphism) ─── */}
-      <View className="absolute bottom-0 left-0 right-0 overflow-hidden">
-        {/* Ligne de séparation subtile (beaucoup plus classe qu'une border standard) */}
-        <View className="h-px bg-black/5" />
+      {/* ✅ MODIFICATION : On n'affiche le CTA QUE SI l'utilisateur n'est pas le propriétaire */}
+      {!isOwner && (
+        <View className="absolute bottom-0 left-0 right-0 overflow-hidden">
+          <View className="h-px bg-black/5" />
 
-        <BlurView
-          intensity={100}
-          tint="light"
-          className="px-5"
-          style={{ paddingTop: 16, paddingBottom: insets.bottom + 16 }}
-        >
-          {event.isRegistered ? (
-            <View className="flex-row items-center justify-center gap-2.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl py-4">
-              <CheckCircle2 size={20} color="#10b981" strokeWidth={2.5} />
-              <Text className="text-emerald-700 font-bold text-sm tracking-wide">
-                Vous êtes inscrit !
-              </Text>
-            </View>
-          ) : event.remainingSeats <= 0 ? (
-            <View className="flex-row items-center justify-center gap-2.5 bg-neutral-100/80 border border-neutral-200/60 rounded-2xl py-4">
-              <Ban size={20} color="#a3a3a3" strokeWidth={2} />
-              <Text className="text-neutral-400 font-bold text-sm tracking-wide">
-                Événement complet
-              </Text>
-            </View>
-          ) : (
-            <TouchableOpacity
-              onPress={handleRegister}
-              disabled={isPending}
-              activeOpacity={0.8}
-              className="rounded-2xl py-4 flex-row items-center justify-center gap-2 overflow-hidden"
-              style={{
-                backgroundColor: isPending ? "#c7d2fe" : "#6366f1",
-                shadowColor: "#6366f1",
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.25,
-                shadowRadius: 20,
-                elevation: 10,
-              }}
-            >
-              {isPending ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <>
-                  <Ticket size={18} color="white" strokeWidth={2.5} />
-                  <Text className="text-white font-extrabold text-base tracking-wide">
-                    {event.isFree
-                      ? "S'inscrire gratuitement"
-                      : `Payer ${formatPrice(event.price!, event.currency)}`}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
-        </BlurView>
-      </View>
+          <BlurView
+            intensity={100}
+            tint="light"
+            className="px-5"
+            style={{ paddingTop: 16, paddingBottom: insets.bottom + 16 }}
+          >
+            {event.isRegistered ? (
+              <View className="flex-row items-center justify-center gap-2.5 bg-emerald-50/80 border border-emerald-200/60 rounded-2xl py-4">
+                <CheckCircle2 size={20} color="#10b981" strokeWidth={2.5} />
+                <Text className="text-emerald-700 font-bold text-sm tracking-wide">
+                  Vous êtes inscrit !
+                </Text>
+              </View>
+            ) : event.remainingSeats <= 0 ? (
+              <View className="flex-row items-center justify-center gap-2.5 bg-neutral-100/80 border border-neutral-200/60 rounded-2xl py-4">
+                <Ban size={20} color="#a3a3a3" strokeWidth={2} />
+                <Text className="text-neutral-400 font-bold text-sm tracking-wide">
+                  Événement complet
+                </Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={handleRegister}
+                disabled={isPending}
+                activeOpacity={0.8}
+                className="rounded-2xl py-4 flex-row items-center justify-center gap-2 overflow-hidden"
+                style={{
+                  backgroundColor: isPending ? "#c7d2fe" : "#6366f1",
+                  shadowColor: "#6366f1",
+                  shadowOffset: { width: 0, height: 12 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 20,
+                  elevation: 10,
+                }}
+              >
+                {isPending ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <>
+                    <Ticket size={18} color="white" strokeWidth={2.5} />
+                    <Text className="text-white font-extrabold text-base tracking-wide">
+                      {event.isFree
+                        ? "S'inscrire gratuitement"
+                        : `Payer ${formatPrice(event.price!, event.currency)}`}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </BlurView>
+        </View>
+      )}
     </View>
   );
 }

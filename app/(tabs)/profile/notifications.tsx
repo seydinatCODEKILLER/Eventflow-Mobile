@@ -1,13 +1,13 @@
 import {
   View,
   Text,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   Animated,
+  SectionList,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useMemo } from "react";
 import { Swipeable } from "react-native-gesture-handler";
 import {
   ArrowLeft,
@@ -32,9 +32,10 @@ import {
   NotificationType,
 } from "@/src/lib/types/notification.type";
 import { useNotifStore } from "@/src/lib/store/notif.store";
-import { Href, useRouter as useExpoRouter, useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
-// ─── Config icônes par type ───────────────────────────────────
+// ─── Config icônes ─────────────────────────────────────────────────────────────
 const NOTIF_CONFIG: Record<
   NotificationType,
   { icon: React.ElementType; color: string; bg: string }
@@ -47,13 +48,12 @@ const NOTIF_CONFIG: Record<
   EVENT_UPDATED: { icon: Calendar, color: "#8b5cf6", bg: "#ede9fe" },
 };
 
-// ─── Temps relatif ────────────────────────────────────────────
+// ─── Temps relatif ──────────────────────────────────────────────────────────────
 const getRelativeTime = (date: string): string => {
   const diff = Date.now() - new Date(date).getTime();
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-
   if (minutes < 1) return "À l'instant";
   if (minutes < 60) return `Il y a ${minutes} min`;
   if (hours < 24) return `Il y a ${hours}h`;
@@ -64,7 +64,30 @@ const getRelativeTime = (date: string): string => {
   });
 };
 
-// ─── Item notification ────────────────────────────────────────
+// ─── Grouper par date ───────────────────────────────────────────────────────────
+const groupByDate = (notifications: Notification[]) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const groups: Record<string, Notification[]> = {};
+
+  notifications.forEach((n) => {
+    const d = new Date(n.createdAt);
+    d.setHours(0, 0, 0, 0);
+    let key: string;
+    if (d.getTime() === today.getTime()) key = "Aujourd'hui";
+    else if (d.getTime() === yesterday.getTime()) key = "Hier";
+    else key = d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(n);
+  });
+
+  return Object.entries(groups).map(([title, data]) => ({ title, data }));
+};
+
+// ─── Item notification ──────────────────────────────────────────────────────────
 function NotifItem({
   item,
   onRead,
@@ -74,39 +97,40 @@ function NotifItem({
   onRead: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const router = useExpoRouter();
+  const router = useRouter();
   const config = NOTIF_CONFIG[item.type];
   const Icon = config.icon;
   const swipeableRef = useRef<Swipeable>(null);
 
   const handlePress = useCallback(() => {
     if (!item.isRead) onRead(item.id);
-
-    // Navigation selon le type
-    if (item.metadata?.eventId) {
-      router.push(`/(tabs)/feed/${item.metadata.eventId}` as Href);
-    }
+    if (item.metadata?.eventId)
+      router.push(`/(tabs)/feed/${item.metadata.eventId}?from=notification` as Href);
   }, [item, onRead, router]);
 
-  // Action swipe gauche — supprimer
   const renderRightActions = useCallback(
     (_: any, dragX: Animated.AnimatedInterpolation<number>) => {
       const scale = dragX.interpolate({
-        inputRange: [-80, 0],
-        outputRange: [1, 0.5],
+        inputRange: [-72, 0],
+        outputRange: [1, 0.6],
         extrapolate: "clamp",
       });
-
       return (
         <TouchableOpacity
           onPress={() => {
             swipeableRef.current?.close();
             onDelete(item.id);
           }}
-          className="bg-destructive items-center justify-center px-5 rounded-r-2xl"
+          style={{
+            backgroundColor: "#ef4444",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 72,
+            marginBottom: 1,
+          }}
         >
           <Animated.View style={{ transform: [{ scale }] }}>
-            <Trash2 size={20} color="white" />
+            <Trash2 size={19} color="white" />
           </Animated.View>
         </TouchableOpacity>
       );
@@ -123,58 +147,97 @@ function NotifItem({
       <TouchableOpacity
         onPress={handlePress}
         activeOpacity={0.7}
-        className="mx-4 mb-2 rounded-2xl overflow-hidden"
         style={{
-          backgroundColor: item.isRead ? "#ffffff" : "#f5f3ff",
-          borderWidth: 1,
-          borderColor: item.isRead ? "#f3f4f6" : "#ede9fe",
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 12,
+          paddingVertical: 13,
+          paddingHorizontal: 18,
+          backgroundColor: "#fff",
+          borderBottomWidth: 1,
+          borderBottomColor: "#efefef",
+          borderLeftWidth: item.isRead ? 0 : 3,
+          borderLeftColor: item.isRead ? "transparent" : "#6366f1",
         }}
       >
-        <View className="flex-row items-start gap-3 p-4">
-          {/* Icône */}
+        {/* Icône */}
+        <View
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 13,
+            backgroundColor: config.bg,
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Icon size={19} color={config.color} />
+        </View>
+
+        {/* Contenu */}
+        <View style={{ flex: 1, minWidth: 0 }}>
           <View
-            className="w-10 h-10 rounded-xl items-center justify-center shrink-0"
-            style={{ backgroundColor: config.bg }}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 8,
+              marginBottom: 3,
+            }}
           >
-            <Icon size={18} color={config.color} />
-          </View>
-
-          {/* Contenu */}
-          <View className="flex-1 gap-0.5">
-            <View className="flex-row items-start justify-between gap-2">
-              <Text
-                className="text-foreground text-sm flex-1"
-                style={{ fontWeight: item.isRead ? "500" : "700" }}
-                numberOfLines={2}
-              >
-                {item.title}
-              </Text>
-              {!item.isRead && (
-                <View className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1" />
-              )}
-            </View>
-
             <Text
-              className="text-muted-foreground text-xs leading-5"
+              style={{
+                fontSize: 13,
+                flex: 1,
+                lineHeight: 18,
+                color: "#111",
+                fontWeight: item.isRead ? "500" : "700",
+              }}
               numberOfLines={2}
             >
-              {item.body}
+              {item.title}
             </Text>
-
-            <Text className="text-muted-foreground text-xs mt-1">
+            <Text style={{ fontSize: 11, color: "#999", flexShrink: 0 }}>
               {getRelativeTime(item.createdAt)}
             </Text>
           </View>
+
+          <Text
+            style={{ fontSize: 12, color: "#999", lineHeight: 18 }}
+            numberOfLines={2}
+          >
+            {item.body}
+          </Text>
         </View>
+
+        {/* Point non lu */}
+        {!item.isRead && (
+          <View
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: 4,
+              backgroundColor: "#6366f1",
+              flexShrink: 0,
+              marginTop: 5,
+            }}
+          />
+        )}
       </TouchableOpacity>
     </Swipeable>
   );
 }
 
-// ─── Écran principal ──────────────────────────────────────────
+// ─── Écran principal ────────────────────────────────────────────────────────────
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: "/(tabs)/profile" as Href,
+    routeMap: {
+      feed: "/(tabs)/feed" as Href,
+    },
+  });
   const unreadCount = useNotifStore((s) => s.unreadCount);
 
   const { data, isLoading } = useNotifications();
@@ -182,27 +245,60 @@ export default function NotificationsScreen() {
   const { mutate: markAllAsRead, isPending: isMarkingAll } = useMarkAllAsRead();
   const { mutate: deleteNotif } = useDeleteNotification();
 
-  const notifications = data?.data ?? [];
+  const notifications = useMemo(() => data?.data ?? [], [data]);
+  const sections = useMemo(() => groupByDate(notifications), [notifications]);
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <View
+      style={{ flex: 1, backgroundColor: "#fafafa", paddingTop: insets.top }}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-border">
-        <View className="flex-row items-center gap-3">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 18,
+          paddingVertical: 14,
+          borderBottomWidth: 1,
+          borderBottomColor: "#efefef",
+          backgroundColor: "rgba(250,250,250,0.97)",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
-            className="w-9 h-9 bg-card border border-border rounded-xl items-center justify-center"
+            onPress={goBack}
             activeOpacity={0.7}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#fff",
+              borderWidth: 1,
+              borderColor: "#efefef",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            <ArrowLeft size={18} color="#374151" />
+            <ArrowLeft size={16} color="#111" />
           </TouchableOpacity>
-          <View className="flex-row items-center gap-2">
-            <Text className="text-foreground font-bold text-lg">
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Text style={{ fontSize: 17, fontWeight: "700", color: "#111" }}>
               Notifications
             </Text>
             {unreadCount > 0 && (
-              <View className="bg-primary rounded-full px-2 py-0.5">
-                <Text className="text-white text-xs font-bold">
+              <View
+                style={{
+                  backgroundColor: "#6366f1",
+                  borderRadius: 100,
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                }}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}
+                >
                   {unreadCount}
                 </Text>
               </View>
@@ -216,14 +312,14 @@ export default function NotificationsScreen() {
             onPress={() => markAllAsRead()}
             disabled={isMarkingAll}
             activeOpacity={0.7}
-            className="flex-row items-center gap-1.5"
+            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
           >
             {isMarkingAll ? (
               <ActivityIndicator size="small" color="#6366f1" />
             ) : (
-              <CheckCheck size={16} color="#6366f1" />
+              <CheckCheck size={15} color="#6366f1" />
             )}
-            <Text className="text-primary text-xs font-semibold">
+            <Text style={{ fontSize: 12, fontWeight: "600", color: "#6366f1" }}>
               Tout lire
             </Text>
           </TouchableOpacity>
@@ -231,32 +327,83 @@ export default function NotificationsScreen() {
       </View>
 
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
           <ActivityIndicator size="large" color="#6366f1" />
         </View>
+      ) : notifications.length === 0 ? (
+        /* Empty state */
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+            gap: 12,
+          }}
+        >
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 20,
+              backgroundColor: "#eef2ff",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 4,
+            }}
+          >
+            <Bell size={28} color="#6366f1" />
+          </View>
+          <Text style={{ fontSize: 17, fontWeight: "700", color: "#111" }}>
+            Aucune notification
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: "#999",
+              textAlign: "center",
+              lineHeight: 20,
+            }}
+          >
+            Vous recevrez ici vos confirmations inscription, rappels événements
+            et autres alertes.
+          </Text>
+        </View>
       ) : (
-        <FlatList
-          data={notifications}
+        /* SectionList groupé par date */
+        <SectionList
+          sections={sections}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <NotifItem item={item} onRead={markAsRead} onDelete={deleteNotif} />
           )}
-          contentContainerStyle={{ paddingTop: 12, paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="flex-1 items-center justify-center py-20 gap-4">
-              <View className="w-20 h-20 rounded-full bg-muted/50 items-center justify-center">
-                <Bell size={36} color="#9ca3af" />
-              </View>
-              <Text className="text-foreground font-bold text-lg">
-                Aucune notification
-              </Text>
-              <Text className="text-muted-foreground text-sm text-center px-8">
-                Vous recevrez ici vos confirmations inscription, rappels
-                events et autres alertes.
+          renderSectionHeader={({ section: { title } }) => (
+            <View
+              style={{
+                paddingHorizontal: 18,
+                paddingTop: 16,
+                paddingBottom: 6,
+                backgroundColor: "#fafafa",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "600",
+                  letterSpacing: 0.7,
+                  textTransform: "uppercase",
+                  color: "#999",
+                }}
+              >
+                {title}
               </Text>
             </View>
-          }
+          )}
+          stickySectionHeadersEnabled={false}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
         />
       )}
     </View>

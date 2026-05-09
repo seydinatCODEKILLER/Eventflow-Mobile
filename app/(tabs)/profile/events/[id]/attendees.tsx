@@ -8,11 +8,12 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Href, useLocalSearchParams } from "expo-router";
 import { useState, useMemo } from "react";
 import { ArrowLeft, Search, UserPlus } from "lucide-react-native";
 import { useEventTickets } from "@/src/lib/hooks/use-events";
 import { EventTicket } from "@/src/lib/types/event.type";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 // ─── Types filtre ──────────────────────────────────────────────────────────────
 type Filter = "ALL" | "ACTIVE" | "USED" | "CANCELLED";
@@ -98,7 +99,7 @@ function AttendeeCard({ ticket }: { ticket: EventTicket }) {
     <View
       style={{
         backgroundColor: "#fff",
-        borderRadius: 18,
+        borderRadius: 12,
         borderWidth: 0.5,
         borderColor: "rgba(0,0,0,0.07)",
         padding: 12,
@@ -210,7 +211,9 @@ function FilterTab({
 export default function AttendeesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: `/(tabs)/profile/events/${id}` as Href,
+  });
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("ALL");
 
@@ -257,7 +260,7 @@ export default function AttendeesScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             activeOpacity={0.7}
             style={{
               width: 38,

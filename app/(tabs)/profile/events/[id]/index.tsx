@@ -28,6 +28,7 @@ import {
 } from "@/src/lib/hooks/use-events";
 import { formatDate, formatPrice } from "@/src/lib/utils/format";
 import { Event } from "@/src/lib/types/event.type";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 // ─── Badge statut ────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: Event["status"] }) {
@@ -73,7 +74,7 @@ function ActionCard({
       style={{
         flex: 1,
         backgroundColor: "#ffffff",
-        borderRadius: 18,
+        borderRadius: 14,
         borderWidth: 0.5,
         borderColor: "rgba(0,0,0,0.07)",
         padding: 15,
@@ -114,6 +115,9 @@ export default function EventDashboardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: "/(tabs)/profile/events" as Href,
+  });
 
   const { data: event, isLoading } = useEvent(id);
   const { data: stats } = useEventStats(id);
@@ -169,7 +173,7 @@ export default function EventDashboardScreen() {
         <Text style={{ fontSize: 17, fontWeight: "700", color: "#0f0f10" }}>
           Événement introuvable
         </Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={goBack}>
           <Text style={{ color: "#6366f1", fontWeight: "600" }}>Retour</Text>
         </TouchableOpacity>
       </View>
@@ -200,7 +204,7 @@ export default function EventDashboardScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           activeOpacity={0.7}
           style={{
             width: 38,
@@ -221,7 +225,7 @@ export default function EventDashboardScreen() {
         {event.status !== "CLOSED" ? (
           <TouchableOpacity
             onPress={() =>
-              router.push(`/(tabs)/profile/events/${id}/edit` as Href)
+              router.push(`/(tabs)/profile/events/${id}/edit?from=event` as Href)
             }
             activeOpacity={0.7}
             style={{
@@ -296,7 +300,7 @@ export default function EventDashboardScreen() {
               marginHorizontal: 16,
               marginTop: 16,
               backgroundColor: "#fff",
-              borderRadius: 20,
+              borderRadius: 16,
               borderWidth: 0.5,
               borderColor: "rgba(0,0,0,0.07)",
               padding: 16,
@@ -391,7 +395,7 @@ export default function EventDashboardScreen() {
                 style={{
                   flex: 1,
                   backgroundColor: "#fff",
-                  borderRadius: 18,
+                  borderRadius: 14,
                   borderWidth: 0.5,
                   borderColor: "rgba(0,0,0,0.07)",
                   padding: 14,
@@ -456,7 +460,7 @@ export default function EventDashboardScreen() {
             label="Inscrits"
             sublabel={`${stats?.tickets.total ?? 0} participants`}
             onPress={() =>
-              router.push(`/(tabs)/profile/events/${id}/attendees` as Href)
+              router.push(`/(tabs)/profile/events/${id}/attendees?from=event` as Href)
             }
             color="#6366f1"
             iconBg="#eef2ff"
@@ -466,7 +470,7 @@ export default function EventDashboardScreen() {
             label="Modérateurs"
             sublabel="Gérer l'équipe"
             onPress={() =>
-              router.push(`/(tabs)/profile/events/${id}/moderators` as Href)
+              router.push(`/(tabs)/profile/events/${id}/moderators?from=event` as Href)
             }
             color="#16a34a"
             iconBg="#f0fdf4"
@@ -478,7 +482,7 @@ export default function EventDashboardScreen() {
             label="Statistiques"
             sublabel="Voir les détails"
             onPress={() =>
-              router.push(`/(tabs)/profile/events/${id}/stats` as Href)
+              router.push(`/(tabs)/profile/events/${id}/stats?from=event` as Href)
             }
             color="#ea580c"
             iconBg="#fff7ed"
@@ -488,7 +492,7 @@ export default function EventDashboardScreen() {
             label="Scanner"
             sublabel="Valider les tickets"
             onPress={() =>
-              router.push(`/(tabs)/profile/events/${id}/scan` as Href)
+              router.push(`/(tabs)/profile/events/${id}/scan?from=event` as Href)
             }
             color="#10b981"
             iconBg="#f0fdf4"

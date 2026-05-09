@@ -1,6 +1,7 @@
 export interface UserTicket {
   id: string;
   status: "ACTIVE" | "USED" | "CANCELLED";
+  qrUrl: string;
   usedAt: string | null;
   createdAt: string;
   event: {

@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Href, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -25,6 +25,7 @@ import {
 } from "@/src/lib/hooks/use-events";
 import { EventModerator } from "@/src/lib/types/event.type";
 import { formatDate } from "@/src/lib/utils/format";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 // ─── Card Modérateur (Style Attendees) ─────────────────────────────────────
 function ModeratorCard({
@@ -131,7 +132,9 @@ function ModeratorCard({
 export default function ModeratorsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: `/(tabs)/profile/events/${id}` as Href,
+  });
   const [email, setEmail] = useState("");
 
   const { data: moderators, isLoading } = useEventModerators(id);
@@ -179,7 +182,7 @@ export default function ModeratorsScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             activeOpacity={0.7}
             style={{
               width: 38,

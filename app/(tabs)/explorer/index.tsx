@@ -22,7 +22,7 @@ import {
   NearbyEvent,
 } from "@/src/lib/types/feed.type";
 import { formatPrice, formatRelativeTime } from "@/src/lib/utils/format";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 
 // ─── Config catégories ────────────────────────────────────────
 const CATEGORIES: { label: string; value: EventCategory; emoji: string }[] = [
@@ -73,7 +73,7 @@ function NearbyCard({ event }: { event: NearbyEvent }) {
   const router = useRouter();
   return (
     <TouchableOpacity
-      onPress={() => router.push(`/(tabs)/feed/${event.id}`)}
+      onPress={() => router.push(`/(tabs)/feed/${event.id}?from=explorer` as Href)}
       activeOpacity={0.85}
       className="w-52 bg-card border border-border rounded-2xl overflow-hidden mr-3"
       style={{
@@ -354,7 +354,7 @@ export default function ExplorerScreen() {
         <FlatList
           data={events}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <EventCard event={item} />}
+          renderItem={({ item,index }) => <EventCard event={item} index={index} from="explorer" />}
           contentContainerStyle={{ paddingTop: 4, paddingBottom: 20 }}
           showsVerticalScrollIndicator={false}
           onEndReached={() => {

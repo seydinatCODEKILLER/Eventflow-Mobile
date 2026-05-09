@@ -13,10 +13,15 @@ import {
   Calendar,
   Users,
   ScanLine,
+  PenLine,
+  CheckCircle,
+  Clock,
+  Settings,
 } from "lucide-react-native";
 import { useOrganizedEvents } from "@/src/lib/hooks/use-events";
 import { OrganizedEvent } from "@/src/lib/types/event.type";
 import { formatDate } from "@/src/lib/utils/format";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 // ─── Badge statut ──────────────────────────────────────────────────────────────
 function EventStatusBadge({ status }: { status: OrganizedEvent["status"] }) {
@@ -43,39 +48,6 @@ function EventStatusBadge({ status }: { status: OrganizedEvent["status"] }) {
   );
 }
 
-// ─── Barre de remplissage ──────────────────────────────────────────────────────
-function FillBar({
-  count,
-  capacity,
-  color,
-}: {
-  count: number;
-  capacity: number;
-  color: string;
-}) {
-  const pct = capacity > 0 ? Math.min((count / capacity) * 100, 100) : 0;
-  return (
-    <View
-      style={{
-        height: 4,
-        backgroundColor: "#ededf0",
-        borderRadius: 100,
-        overflow: "hidden",
-        marginBottom: 10,
-      }}
-    >
-      <View
-        style={{
-          height: "100%",
-          width: `${pct}%`,
-          backgroundColor: color,
-          borderRadius: 100,
-        }}
-      />
-    </View>
-  );
-}
-
 // ─── Séparateur de section ─────────────────────────────────────────────────────
 function SectionLabel({ label }: { label: string }) {
   return (
@@ -97,6 +69,56 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ─── Card event ────────────────────────────────────────────────────────────────
+function FillBar({
+  count,
+  capacity,
+  color,
+}: {
+  count: number;
+  capacity: number;
+  color: string;
+}) {
+  const pct = capacity > 0 ? Math.min((count / capacity) * 100, 100) : 0;
+  const remaining = capacity - count;
+
+  return (
+    <View style={{ gap: 5 }}>
+      <View
+        style={{
+          height: 3,
+          backgroundColor: "#ededf0",
+          borderRadius: 100,
+          overflow: "hidden",
+        }}
+      >
+        <View
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            backgroundColor: color,
+            borderRadius: 100,
+          }}
+        />
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <Text style={{ fontSize: 10, color: "#8e8e93" }}>
+          {Math.round(pct)} % de remplissage
+        </Text>
+        <Text style={{ fontSize: 10, color: "#8e8e93" }}>
+          {remaining} place{remaining > 1 ? "s" : ""} restante
+          {remaining > 1 ? "s" : ""}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// ─── Card event ────────────────────────────────────────────────────────────────
 function EventCard({ event }: { event: OrganizedEvent }) {
   const router = useRouter();
 
@@ -104,7 +126,7 @@ function EventCard({ event }: { event: OrganizedEvent }) {
     event.status === "ONGOING"
       ? "#10b981"
       : event.status === "PUBLISHED"
-        ? "#3b82f6"
+        ? "#6366f1"
         : event.status === "CLOSED"
           ? "#ef4444"
           : "#d1d5db";
@@ -112,9 +134,51 @@ function EventCard({ event }: { event: OrganizedEvent }) {
   const fillColor = event.status === "ONGOING" ? "#10b981" : "#6366f1";
   const count = event.ticketsCount ?? 0;
 
+  const footerLeft = () => {
+    if (event.status === "ONGOING") {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Clock size={12} color="#8e8e93" />
+          <Text style={{ fontSize: 11, color: "#8e8e93" }}>En cours</Text>
+        </View>
+      );
+    }
+    if (event.status === "PUBLISHED") {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <Calendar size={12} color="#8e8e93" />
+          <Text style={{ fontSize: 11, color: "#8e8e93" }}>
+            {formatDate(event.startDate)}
+          </Text>
+        </View>
+      );
+    }
+    if (event.status === "DRAFT") {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <PenLine size={12} color="#8e8e93" />
+          <Text style={{ fontSize: 11, color: "#8e8e93" }}>
+            Invisible du public
+          </Text>
+        </View>
+      );
+    }
+    if (event.status === "CLOSED") {
+      return (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+          <CheckCircle size={12} color="#8e8e93" />
+          <Text style={{ fontSize: 11, color: "#8e8e93" }}>Clôturé</Text>
+        </View>
+      );
+    }
+    return null;
+  };
+
+  const isDraft = event.status === "DRAFT";
+
   return (
     <TouchableOpacity
-      onPress={() => router.push(`/(tabs)/profile/events/${event.id}` as Href)}
+      onPress={() => router.push(`/(tabs)/profile/events/${event.id}?from=events` as Href)}
       activeOpacity={0.82}
       style={{
         marginHorizontal: 16,
@@ -124,113 +188,116 @@ function EventCard({ event }: { event: OrganizedEvent }) {
         borderWidth: 0.5,
         borderColor: "rgba(0,0,0,0.07)",
         overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        elevation: 1,
       }}
     >
-      <View style={{ flexDirection: "row" }}>
-        {/* Accent bar gauche */}
-        <View style={{ width: 4, backgroundColor: accentColor }} />
+      {/* Accent top bar */}
+      <View style={{ height: 3, backgroundColor: accentColor }} />
 
-        <View style={{ flex: 1, padding: 14 }}>
-          {/* Titre + badge */}
-          <View
+      <View style={{ padding: 14, gap: 10 }}>
+        {/* Titre + badge */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: 8,
-              marginBottom: 10,
+              fontSize: 14,
+              fontWeight: "500",
+              color: "#0f0f10",
+              lineHeight: 20,
+              flex: 1,
             }}
+            numberOfLines={2}
           >
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "700",
-                color: "#0f0f10",
-                lineHeight: 20,
-                flex: 1,
-              }}
-              numberOfLines={2}
-            >
-              {event.title}
-            </Text>
-            <EventStatusBadge status={event.status} />
-          </View>
+            {event.title}
+          </Text>
+          <EventStatusBadge status={event.status} />
+        </View>
 
-          {/* Meta */}
-          <View style={{ gap: 5, marginBottom: 10 }}>
+        {/* Meta */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Calendar size={12} color="#8e8e93" />
+            <Text style={{ fontSize: 11, color: "#8e8e93" }}>
+              {formatDate(event.startDate)}
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <Users size={12} color="#6366f1" />
+            <Text style={{ fontSize: 11, color: "#8e8e93" }}>
+              <Text style={{ color: "#6366f1", fontWeight: "700" }}>
+                {count}
+              </Text>
+              {" / "}
+              {event.capacity}
+            </Text>
+          </View>
+          {event.status === "ONGOING" && (
             <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
             >
-              <Calendar size={12} color="#8e8e93" />
+              <ScanLine size={12} color="#10b981" />
               <Text
-                style={{ fontSize: 11, color: "#8e8e93", fontWeight: "500" }}
+                style={{ fontSize: 11, color: "#10b981", fontWeight: "700" }}
               >
-                {formatDate(event.startDate)}
+                {event.scansCount ?? 0} scans
               </Text>
             </View>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 14 }}
-            >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-              >
-                <Users size={12} color="#6366f1" />
-                <Text
-                  style={{ fontSize: 11, color: "#8e8e93", fontWeight: "500" }}
-                >
-                  <Text style={{ color: "#6366f1", fontWeight: "700" }}>
-                    {count}
-                  </Text>
-                  {" / "}
-                  {event.capacity} inscrits
-                </Text>
-              </View>
-              {event.status === "ONGOING" && (
-                <View
-                  style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-                >
-                  <ScanLine size={12} color="#10b981" />
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: "#10b981",
-                      fontWeight: "700",
-                    }}
-                  >
-                    {event.scansCount ?? 0} scans
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
+          )}
+        </View>
 
-          {/* Barre de remplissage */}
-          <FillBar count={count} capacity={event.capacity} color={fillColor} />
+        {/* Barre de remplissage */}
+        <FillBar count={count} capacity={event.capacity} color={fillColor} />
+      </View>
 
-          {/* Footer */}
-          <View
+      {/* Footer */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 14,
+          paddingVertical: 10,
+          borderTopWidth: 0.5,
+          borderTopColor: "rgba(0,0,0,0.06)",
+        }}
+      >
+        {footerLeft()}
+
+        <TouchableOpacity
+          onPress={() =>
+            router.push(`/(tabs)/profile/events/${event.id}?from=events` as Href)
+          }
+          activeOpacity={0.8}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            backgroundColor: isDraft ? "#f3f4f6" : "#eef2ff",
+            paddingHorizontal: 11,
+            paddingVertical: 5,
+            borderRadius: 100,
+          }}
+        >
+          {isDraft ? (
+            <PenLine size={11} color="#6b7280" />
+          ) : (
+            <Settings size={11} color="#6366f1" />
+          )}
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingTop: 10,
-              borderTopWidth: 0.5,
-              borderTopColor: "rgba(0,0,0,0.06)",
+              fontSize: 11,
+              fontWeight: "500",
+              color: isDraft ? "#6b7280" : "#6366f1",
             }}
           >
-            <Text style={{ fontSize: 11, fontWeight: "700", color: "#6366f1" }}>
-              Gérer →
-            </Text>
-            {event.status === "DRAFT" && (
-              <Text style={{ fontSize: 10, color: "#8e8e93" }}>Non publié</Text>
-            )}
-          </View>
-        </View>
+            {isDraft ? "Modifier" : "Gérer"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
@@ -239,6 +306,8 @@ function EventCard({ event }: { event: OrganizedEvent }) {
 export default function MyEventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const goBack = useSmartBack({ defaultRoute: "/(tabs)/profile" as Href });
+
   const { data, isLoading } = useOrganizedEvents();
   const events: OrganizedEvent[] = data?.data ?? [];
 
@@ -272,7 +341,7 @@ export default function MyEventsScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={goBack}
             activeOpacity={0.7}
             style={{
               width: 38,
@@ -319,7 +388,6 @@ export default function MyEventsScreen() {
           <ActivityIndicator size="large" color="#6366f1" />
         </View>
       ) : events.length === 0 ? (
-        // ✅ Empty state affiché uniquement quand aucun événement
         <View
           style={{
             flex: 1,

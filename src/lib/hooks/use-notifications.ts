@@ -17,9 +17,22 @@ export const useNotifications = () => {
   });
 };
 
+export const useUnreadCount = () => {
+  const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
+
+  return useQuery({
+    queryKey: [...QUERY_KEYS.notifications, "count"],
+    queryFn: async () => {
+      const count = await notificationsApi.getUnreadCount();
+      setUnreadCount(count);
+      return count;
+    },
+    staleTime: 30 * 1000,
+  });
+};
+
 export const useMarkAsRead = () => {
   const queryClient = useQueryClient();
-  const setUnreadCount = useNotifStore((s) => s.setUnreadCount);
 
   return useMutation({
     mutationFn: (id: string) => notificationsApi.markAsRead(id),

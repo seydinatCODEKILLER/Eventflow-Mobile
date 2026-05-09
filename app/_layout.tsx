@@ -10,6 +10,7 @@ import { queryClient } from "@/src/lib/query-client";
 import { SplashScreen } from "@/src/components/shared/SplashScreen";
 import { useAuthStore } from "@/src/lib/store/auth.store";
 import { useAppSetup } from "@/src/config/use-app-setup";
+import { useUnreadCount } from "@/src/lib/hooks/use-notifications";
 
 export default function RootLayout() {
   const initialize = useAuthStore((s) => s.initialize);
@@ -37,6 +38,7 @@ function AppContent() {
   
   // ✅ Un seul mot pour gérer Socket, Push, et Listeners
   useAppSetup();
+    useUnreadCount();
 
   if (isLoading) return <SplashScreen />;
 

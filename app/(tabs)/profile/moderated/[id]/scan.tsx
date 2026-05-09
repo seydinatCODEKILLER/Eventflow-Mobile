@@ -6,7 +6,7 @@ import {
   Vibration,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, Href } from "expo-router";
+import { Href, useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useCallback } from "react";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import {
@@ -20,11 +20,12 @@ import { ScanResult } from "@/src/lib/types/event.type";
 import * as Device from "expo-device";
 import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
-export default function ScanScreen() {
+export default function ModeratedScanScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const goBack = useSmartBack({
-    defaultRoute: `/(tabs)/profile/events/${id}` as Href,
+    defaultRoute: "/(tabs)/profile/moderated" as Href,
   });
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -66,7 +67,7 @@ export default function ScanScreen() {
     setResult(null);
   }, []);
 
-  // Permission caméra refusée
+  // Permission refusée
   if (!permission?.granted) {
     return (
       <View
@@ -114,9 +115,7 @@ export default function ScanScreen() {
           style={{ flex: 1 }}
           facing="back"
           onBarcodeScanned={scanned ? undefined : handleScan}
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr"],
-          }}
+          barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         />
 
         {/* Viseur */}
@@ -126,23 +125,26 @@ export default function ScanScreen() {
               className="border-2 border-white rounded-3xl"
               style={{ width: 250, height: 250 }}
             >
-              {/* Coins */}
               {[
-                "top-0 left-0",
-                "top-0 right-0",
-                "bottom-0 left-0",
-                "bottom-0 right-0",
-              ].map((pos, i) => (
+                { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3 },
+                { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3 },
+                {
+                  bottom: 0,
+                  left: 0,
+                  borderBottomWidth: 3,
+                  borderLeftWidth: 3,
+                },
+                {
+                  bottom: 0,
+                  right: 0,
+                  borderBottomWidth: 3,
+                  borderRightWidth: 3,
+                },
+              ].map((style, i) => (
                 <View
                   key={i}
-                  className={`absolute w-8 h-8 border-primary ${pos}`}
-                  style={{
-                    borderTopWidth: i < 2 ? 3 : 0,
-                    borderBottomWidth: i >= 2 ? 3 : 0,
-                    borderLeftWidth: i % 2 === 0 ? 3 : 0,
-                    borderRightWidth: i % 2 !== 0 ? 3 : 0,
-                    borderRadius: 4,
-                  }}
+                  className="absolute w-8 h-8"
+                  style={{ ...style, borderColor: "#6366f1", borderRadius: 4 }}
                 />
               ))}
             </View>
@@ -152,7 +154,7 @@ export default function ScanScreen() {
           </View>
         )}
 
-        {/* Résultat scan */}
+        {/* Résultat */}
         {(result || isPending) && (
           <View className="absolute inset-0 items-center justify-center bg-black/70">
             <View className="bg-white rounded-3xl p-8 mx-8 items-center gap-4">
@@ -172,9 +174,16 @@ export default function ScanScreen() {
                     Entrée validée ✓
                   </Text>
                   {result.user && (
-                    <Text className="text-muted-foreground text-sm text-center">
-                      {result.user.fullName}
-                    </Text>
+                    <View className="items-center gap-1">
+                      <Text className="text-foreground font-semibold text-base">
+                        {result.user.fullName}
+                      </Text>
+                      {result.user.email && (
+                        <Text className="text-muted-foreground text-sm">
+                          {result.user.email}
+                        </Text>
+                      )}
+                    </View>
                   )}
                 </>
               ) : result?.result === "ALREADY_USED" ? (
@@ -188,6 +197,11 @@ export default function ScanScreen() {
                   <Text className="text-muted-foreground text-sm text-center">
                     Ce ticket a déjà été scanné
                   </Text>
+                  {result.user && (
+                    <Text className="text-foreground font-semibold text-sm">
+                      {result.user.fullName}
+                    </Text>
+                  )}
                 </>
               ) : (
                 <>

@@ -274,3 +274,11 @@ export const useValidateTicket = () => {
     }) => eventsApi.validateTicket(qrPayload, deviceId, user?.id ?? ""),
   });
 };
+
+export const useModeratedEvents = () => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.events, "moderated"],
+    queryFn: eventsApi.getModeratedEvents,
+    staleTime: 2 * 60 * 1000,
+  });
+};

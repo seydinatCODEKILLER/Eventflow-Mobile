@@ -125,12 +125,13 @@ export default function TabsLayout() {
 
       {/* ── Routes cachées de la tab bar ── */}
       <Tabs.Screen name="feed/[id]/index" options={{ href: null }} />
+      <Tabs.Screen name="feed/[id]/payment" options={{ href: null }} />
       <Tabs.Screen name="profile/events/[id]/index" options={{ href: null }} />
-      <Tabs.Screen name="profile/tickets" options={{ href: null }} />
       <Tabs.Screen name="profile/notifications" options={{ href: null }} />
       <Tabs.Screen name="profile/settings" options={{ href: null }} />
+      <Tabs.Screen name="profile/payments" options={{ href: null }} />
       <Tabs.Screen name="profile/events/index" options={{ href: null }} />
-      {/* <Tabs.Screen name="profile/events/[id]/index" options={{ href: null }} /> */}
+       <Tabs.Screen name="profile/tickets/index" options={{ href: null }} />
       <Tabs.Screen
         name="profile/events/[id]/attendees"
         options={{ href: null }}
@@ -139,9 +140,14 @@ export default function TabsLayout() {
         name="profile/events/[id]/moderators"
         options={{ href: null }}
       />
+      <Tabs.Screen name="profile/moderated/index" options={{ href: null }} />
+      <Tabs.Screen name="profile/moderated/[id]/scan" options={{ href: null }} />
+      <Tabs.Screen name="profile/moderated/[id]/index" options={{ href: null }} />
+
       <Tabs.Screen name="profile/events/[id]/stats" options={{ href: null }} />
       <Tabs.Screen name="profile/events/[id]/scan" options={{ href: null }} />
       <Tabs.Screen name="profile/events/[id]/edit" options={{ href: null }} />
+      <Tabs.Screen name="profile/tickets/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

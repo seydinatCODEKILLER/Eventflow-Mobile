@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Href, useLocalSearchParams } from "expo-router";
 import { useState, useCallback, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,10 +46,7 @@ import { useEvent, useUpdateEvent } from "@/src/lib/hooks/use-events";
 import { EventCategory } from "@/src/lib/types/feed.type";
 import { formatDateTime } from "@/src/lib/utils/format";
 import { FormInput } from "@/src/components/ui/FormInput";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { eventsApi } from "@/src/lib/api/events.api";
-import { QUERY_KEYS } from "@/src/lib/utils/constants";
-import Toast from "react-native-toast-message";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 // ─── Config catégories ────────────────────────────────────────
 const CATEGORIES: { label: string; value: EventCategory; emoji: string }[] = [
@@ -153,7 +150,10 @@ function NavButtons({
 export default function EditEventScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+
+  const goBackToEvent = useSmartBack({
+    defaultRoute: `/(tabs)/profile/events/${id}` as Href,
+  });
 
   const { data: event, isLoading } = useEvent(id);
   const { mutate: updateEvent, isPending } = useUpdateEvent(id);
@@ -339,7 +339,7 @@ export default function EditEventScreen() {
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center gap-2">
               <TouchableOpacity
-                onPress={() => router.back()}
+                onPress={goBackToEvent}
                 className="w-8 h-8 bg-card border border-border rounded-xl items-center justify-center mr-1"
                 activeOpacity={0.7}
               >

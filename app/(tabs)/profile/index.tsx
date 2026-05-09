@@ -17,12 +17,16 @@ import {
   LogOut,
   CreditCard,
   Edit3,
+  Shield,
 } from "lucide-react-native";
 import { useAuthStore } from "@/src/lib/store/auth.store";
 import { useLogout } from "@/src/lib/hooks/use-auth";
 import { useMyTickets } from "@/src/lib/hooks/use-users";
 import { useNotifStore } from "@/src/lib/store/notif.store";
-import { useOrganizedEvents } from "@/src/lib/hooks/use-events";
+import {
+  useModeratedEvents,
+  useOrganizedEvents,
+} from "@/src/lib/hooks/use-events";
 import { LinearGradient } from "expo-linear-gradient";
 
 // ─── Item menu ────────────────────────────────────────────────
@@ -106,10 +110,12 @@ export default function ProfileScreen() {
 
   const { data: tickets } = useMyTickets();
   const { data: eventsData } = useOrganizedEvents();
+  const { data: moderatedData } = useModeratedEvents();
 
   const activeTickets =
     tickets?.filter((t) => t.status === "ACTIVE").length ?? 0;
   const myEventsCount = eventsData?.data?.length ?? 0;
+  const moderatedCount = moderatedData?.data?.length ?? 0;
 
   const initials = user?.fullName
     .split(" ")
@@ -294,6 +300,16 @@ export default function ProfileScreen() {
             iconBg="#fef3c7"
             iconColor="#f59e0b"
             onPress={() => router.push("/(tabs)/profile/notifications")}
+          />
+          <MenuDivider />
+          <MenuItem
+            icon={Shield}
+            label="Mes modérations"
+            sublabel={`${moderatedCount} event${moderatedCount > 1 ? "s" : ""} à modérer`}
+            badge={moderatedCount}
+            iconBg="#fef3c7"
+            iconColor="#f59e0b"
+            onPress={() => router.push("/(tabs)/profile/moderated")}
           />
         </View>
 

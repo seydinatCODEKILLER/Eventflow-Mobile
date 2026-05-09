@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Href, useRouter } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,6 +26,7 @@ import { useAuthStore } from "@/src/lib/store/auth.store";
 import { useUpdateProfile, useDeleteAccount } from "@/src/lib/hooks/use-users";
 import { FormInput } from "@/src/components/ui/FormInput";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 const settingsSchema = z.object({
   fullName: z.string().min(2, "Nom complet requis (min 2 caractères)"),
@@ -40,7 +41,9 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: "/(tabs)/profile" as Href,
+  });
   const user = useAuthStore((s) => s.user);
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccount();
@@ -103,7 +106,7 @@ export default function SettingsScreen() {
       {/* ── Header ── */}
       <View className="flex-row items-center gap-3 px-4 py-3">
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           className="w-9 h-9 bg-card border border-border rounded-xl items-center justify-center"
           activeOpacity={0.7}
         >

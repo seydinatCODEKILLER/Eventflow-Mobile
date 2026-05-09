@@ -6,10 +6,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Href, useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, RefreshCw } from "lucide-react-native";
 import { useEventStats, useEvent } from "@/src/lib/hooks/use-events";
 import Svg, { Circle } from "react-native-svg";
+import { useSmartBack } from "@/src/lib/hooks/use-smart-back";
 
 // ─── Ring de présence ─────────────────────────────────────────────────────────
 function AttendanceRing({ rate }: { rate: number }) {
@@ -181,7 +182,9 @@ function SectionTitle({ label }: { label: string }) {
 export default function StatsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const goBack = useSmartBack({
+    defaultRoute: `/(tabs)/profile/events/${id}` as Href,
+  });
 
   const { data: event } = useEvent(id);
   const { data: stats, isLoading, refetch, isRefetching } = useEventStats(id);
@@ -215,7 +218,7 @@ export default function StatsScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={goBack}
           activeOpacity={0.7}
           style={{
             width: 36,

@@ -9,6 +9,14 @@ export const notificationsApi = {
     return data;
   },
 
+  getUnreadCount: async (): Promise<number> => {
+    const { data } = await api.get<{
+      success: boolean;
+      data: { count: number };
+    }>("/notifications/unread-count");
+    return data.data.count;
+  },
+
   markAsRead: async (id: string): Promise<void> => {
     await api.patch(`/notifications/${id}/read`);
   },
